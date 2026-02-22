@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏剧情二创平台</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 左侧面板 -->
+        <div id="left-panel" class="side-panel">
+            <div class="panel-content">
+                <!-- 背景设置 -->
+                <div class="section">
+                    <h3 class="section-title">背景设置</h3>
+                    <div class="subsection">
+                        <label class="subsection-label">选择背景:</label>
+                        <div id="background-list" class="image-grid">
+                            <!-- 背景图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入背景:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-background" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 角色立绘 -->
+                <div class="section">
+                    <h3 class="section-title">角色立绘</h3>
+                    <div class="subsection">
+                        <label class="subsection-label">选择角色:</label>
+                        <div id="left-character-list" class="image-grid">
+                            <!-- 角色图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入角色:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-character-left" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动画设置 -->
+                <div class="section">
+                    <h3 class="section-title">动画设置</h3>
+                    <div class="toggle-row">
+                        <span class="toggle-label">打字机动画:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="animation-toggle-left">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">动画速度: <span id="speed-value-left">50</span>ms</span>
+                        <input type="range" id="animation-speed-left" min="10" max="200" value="50" class="slider">
+                        <div class="slider-labels">
+                            <span>快</span>
+                            <span>慢</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 指挥官设置 -->
+                <div class="section">
+                    <h3 class="section-title">指挥官设置</h3>
+                    <button id="commander-dialog-btn-left" class="btn btn-primary">指挥官对话</button>
+                </div>
+
+                <!-- 导出按钮组 -->
+                <div class="section button-group">
+                    <button id="export-btn-left" class="btn btn-success">导出画面</button>
+                    <button id="export-all-btn-left" class="btn btn-secondary">全部导出 (<span id="scene-count-left">1</span>)</button>
+                    <button id="export-gif-btn-left" class="btn btn-secondary">导出GIF动画</button>
+                </div>
+
+                <!-- 导航按钮组 -->
+                <div class="section nav-buttons">
+                    <button id="prev-dialog-left" class="btn btn-warning">下一句</button>
+                    <button id="next-scene-left" class="btn btn-orange">下一幕</button>
+                </div>
+
+                <!-- 撤回按钮组 -->
+                <div class="section undo-buttons">
+                    <button id="undo-left" class="btn btn-gray">撤回</button>
+                    <button id="undo-all-left" class="btn btn-gray">全部撤回</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间预览区域 -->
+        <div id="preview-area" class="preview-area">
+            <div class="preview-wrapper">
+                <div id="preview-container" class="preview-container">
+                    <!-- 背景层 -->
+                    <div id="preview-background" class="preview-background"></div>
+                    
+                    <!-- 角色层 -->
+                    <div id="character-layer" class="character-layer">
+                        <!-- 角色立绘将在这里动态添加 -->
+                    </div>
+                    
+                    <!-- 指挥官对话框 -->
+                    <div id="commander-dialog" class="commander-dialog" style="display: none;">
+                        <textarea id="commander-text" class="commander-text" placeholder="输入指挥官对话内容..."></textarea>
+                    </div>
+                    
+                    <!-- 对话区域 - 位于背景图内部底部 -->
+                    <div class="dialog-area">
+                        <textarea 
+                            id="character-name" 
+                            class="character-name bg-transparent text-white text-xl font-bold border-b border-white pb-1 focus:outline-none resize-none" 
+                            placeholder="角色名称" 
+                            rows="1" 
+                            cols="30">???</textarea>
+                        <div class="dialog-input-wrapper">
+                            <textarea id="dialog-input" class="dialog-input" placeholder="请输入文本。" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div id="right-panel" class="side-panel">
+            <div class="panel-content">
+                <!-- 角色设置 -->
+                <div class="section">
+                    <h3 class="section-title">角色设置</h3>
+                    <div class="subsection">
+                        <label class="subsection-label">选择角色:</label>
+                        <div id="right-character-list" class="image-grid">
+                            <!-- 角色图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入角色:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-character-right" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动画设置 -->
+                <div class="section">
+                    <h3 class="section-title">动画设置</h3>
+                    <div class="toggle-row">
+                        <span class="toggle-label">打字机动画:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="animation-toggle-right">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">动画速度: <span id="speed-value-right">50</span>ms</span>
+                        <input type="range" id="animation-speed-right" min="10" max="200" value="50" class="slider">
+                        <div class="slider-labels">
+                            <span>快</span>
+                            <span>慢</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 指挥官设置 -->
+                <div class="section">
+                    <h3 class="section-title">指挥官设置</h3>
+                    <button id="commander-dialog-btn-right" class="btn btn-primary">指挥官对话</button>
+                </div>
+
+                <!-- 导出按钮组 -->
+                <div class="section button-group">
+                    <button id="export-btn-right" class="btn btn-success">导出画面</button>
+                    <button id="export-all-btn-right" class="btn btn-secondary">全部导出 (<span id="scene-count-right">1</span>)</button>
+                    <button id="export-gif-btn-right" class="btn btn-secondary">导出GIF动画</button>
+                </div>
+
+                <!-- 导航按钮组 -->
+                <div class="section nav-buttons">
+                    <button id="prev-dialog-right" class="btn btn-warning">下一句</button>
+                    <button id="next-scene-right" class="btn btn-orange">下一幕</button>
+                </div>
+
+                <!-- 撤回按钮组 -->
+                <div class="section undo-buttons">
+                    <button id="undo-right" class="btn btn-gray">撤回</button>
+                    <button id="undo-all-right" class="btn btn-gray">全部撤回</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 折叠按钮：放在 #app 内最上层，折叠时仍可见 -->
+        <button id="fold-left" class="fold-btn" title="收起左侧面板" aria-label="收起左侧面板">◀</button>
+        <button id="fold-right" class="fold-btn" title="收起右侧面板" aria-label="收起右侧面板">▶</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
