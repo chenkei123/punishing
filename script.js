@@ -41,6 +41,8 @@ const state = {
     uploadedCharacters: [],
     animationEnabled: false,
     animationSpeed: 50,
+    // 对话输入框字体大小（px）
+    dialogFontSize: 14,
     leftPanelFolded: false,
     rightPanelFolded: false,
     // 标记当前输入框是否包含未保存的文本（用于防止切换角色/背景时被重置）
@@ -113,6 +115,9 @@ const elements = {
     dialogInput: document.getElementById('dialog-input'),
     commanderDialog: document.getElementById('commander-dialog'),
     commanderText: document.getElementById('commander-text'),
+    // 字体调整控件（右侧面板）
+    dialogFontSizeSlider: document.getElementById('dialog-font-size'),
+    dialogFontSizeValue: document.getElementById('dialog-font-size-value'),
     
     // 导出按钮
     exportBtnLeft: document.getElementById('export-btn-left'),
@@ -163,6 +168,10 @@ function init() {
     if (elements.animationSpeedRight) elements.animationSpeedRight.value = state.animationSpeed;
     if (elements.speedValueLeft) elements.speedValueLeft.textContent = state.animationSpeed;
     if (elements.speedValueRight) elements.speedValueRight.textContent = state.animationSpeed;
+    // 应用并同步对话框字体大小
+    if (elements.dialogFontSizeSlider) elements.dialogFontSizeSlider.value = state.dialogFontSize;
+    if (elements.dialogFontSizeValue) elements.dialogFontSizeValue.textContent = state.dialogFontSize;
+    if (elements.dialogInput) elements.dialogInput.style.fontSize = state.dialogFontSize + 'px';
     updateSceneCount();
     updateFoldButtonTitles();
     elements.app.classList.toggle('left-panel-folded', state.leftPanelFolded);
@@ -240,6 +249,16 @@ function setupEventListeners() {
         elements.animationSpeedLeft.value = state.animationSpeed;
         elements.speedValueLeft.textContent = state.animationSpeed;
     });
+
+    // 对话框字体大小（右侧面板）
+    if (elements.dialogFontSizeSlider) {
+        elements.dialogFontSizeSlider.addEventListener('input', (e) => {
+            const v = parseInt(e.target.value);
+            state.dialogFontSize = v;
+            if (elements.dialogFontSizeValue) elements.dialogFontSizeValue.textContent = v;
+            if (elements.dialogInput) elements.dialogInput.style.fontSize = v + 'px';
+        });
+    }
     
     // 导出按钮
     elements.exportBtnLeft.addEventListener('click', exportScene);
