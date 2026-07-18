@@ -1,0 +1,138 @@
+<!--
+  ============================================================
+  ming.html —— 鸣潮模式 DOM 片段
+  ------------------------------------------------------------
+  本文件为鸣潮模式的独立 DOM 结构，由 ming.js 在运行时注入主页面。
+  设计要点：
+    1. 不包含战双版 commander-dialog（指挥官对话）逻辑与 DOM；
+    2. 包含飞讯模式（FeixunSystem）的联系人数据结构容器与消息渲染区域；
+    3. 与战双版共享同一编辑外壳（左右面板/预览区），但飞讯容器独立；
+    4. 通过 data-ming-fragment 标记各可注入片段，ming.js 按 id 取用。
+  ============================================================
+-->
+
+<!-- ===== 片段 1：鸣潮欢迎页幻灯片（注入到 #intro-slider） ===== -->
+<template data-ming-fragment="intro-slide">
+    <div id="intro-ming" class="intro-slide" data-mode="ming">
+        <div class="intro-content">
+            <h1>
+                <span class="title-part left">鸣潮剧情二创制作网页</span>
+            </h1>
+            <p class="subtitle">B站比翼苍穹制作</p>
+        </div>
+        <!-- 左侧引导箭头（仅在鸣潮页面显示） -->
+        <div id="arrow-left" class="slide-arrow slide-arrow-left" title="左滑进入战双">
+            <span class="arrow-icon">&#9668;</span>
+            <span class="arrow-text">战双</span>
+        </div>
+    </div>
+</template>
+
+<!-- ===== 片段 2：飞讯主容器（注入到 #preview-container 内部末尾） ===== -->
+<!-- 注意：鸣潮版不需要 commander-dialog，此处不包含该 DOM -->
+<!-- banner 已移入容器内部，使导出时能包含图片关联区域 -->
+<template data-ming-fragment="feixun-container">
+    <div id="feixun-container" class="feixun-container">
+        <!-- 飞讯图片关联区域（顶部横条，1200×60 比例） -->
+        <div id="feixun-association-banner" class="feixun-association-banner">
+            <img src="backgrounds/feixun1.png" alt="图片关联">
+        </div>
+        <!-- 主内容行：联系人列表 + 聊天区域 -->
+        <div class="feixun-main-row">
+            <!-- 左侧联系人列表 -->
+            <div class="feixun-contact-list">
+                <div class="feixun-header">
+                    <div class="feixun-header-title">
+                    </div>
+                </div>
+                <div class="feixun-contacts-scroll" id="feixun-contacts-list">
+                    <!-- 联系人项将动态生成 -->
+                </div>
+            </div>
+
+            <!-- 右侧聊天区域 -->
+            <div class="feixun-chat-area">
+                <div class="feixun-chat-header" id="feixun-chat-title">
+                    <div class="feixun-chat-header-bg"></div>
+                    <div class="feixun-chat-header-content">
+                        <span id="feixun-chat-title-text" contenteditable="true">未知联系人</span>
+                        <span id="feixun-chat-tag-text" contenteditable="true" class="feixun-chat-tag">点击编辑个性标签</span>
+                    </div>
+                </div>
+                <div class="feixun-messages-bg"></div>
+                <div class="feixun-messages" id="feixun-messages">
+                    <!-- 消息将动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- ===== 片段 3：鸣潮剧情模式背景选择（注入到左侧面板） ===== -->
+<template data-ming-fragment="ming-bg-select">
+    <div class="section ming-story-only" id="ming-bg-select-section">
+        <h3 class="section-title">背景设置</h3>
+        <div class="subsection">
+            <label class="subsection-label">选择背景:</label>
+            <div id="ming-background-list" class="image-grid">
+                <!-- 鸣潮背景图片将动态添加 -->
+            </div>
+        </div>
+        <div class="subsection">
+            <label class="subsection-label">导入背景:</label>
+            <div class="file-input-wrapper">
+                <button class="file-btn" id="ming-upload-bg-btn">选择文件</button>
+                <span class="file-name" id="ming-bg-file-name">未选择文件</span>
+                <input type="file" id="ming-upload-background" accept="image/*,video/*" hidden>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- ===== 片段 4：左侧面板飞讯按钮（注入到左侧面板） ===== -->
+<template data-ming-fragment="feixun-left-btn">
+    <div class="section feixun-mode-only" id="feixun-add-dialog-section">
+        <button id="feixun-add-dialog-btn-left" class="btn btn-primary">添加对话</button>
+        <button id="feixun-add-contact-btn" class="btn btn-primary" style="margin-top: 8px;">添加联系人</button>
+    </div>
+</template>
+
+<!-- ===== 片段 5：右侧面板飞讯按钮（注入到右侧面板） ===== -->
+<template data-ming-fragment="feixun-right-btn">
+    <div class="section feixun-mode-only" id="feixun-piaobo-section">
+        <button id="feixun-piaobo-dialog-btn-right" class="btn btn-primary">漂泊者对话</button>
+    </div>
+</template>
+
+<!-- ===== 片段 6：联系人编辑弹窗（注入到 body 末尾） ===== -->
+<template data-ming-fragment="feixun-modal">
+    <div id="feixun-contact-modal" class="feixun-contact-edit-modal">
+        <div class="feixun-edit-panel">
+            <h4 id="feixun-edit-title">编辑联系人</h4>
+            <div class="feixun-edit-field">
+                <label>头像</label>
+                <div class="feixun-avatar-upload" id="feixun-avatar-upload">
+                    <span class="upload-hint">点击上传头像</span>
+                </div>
+                <input type="file" id="feixun-avatar-input" accept="image/*" hidden>
+            </div>
+            <div class="feixun-edit-field">
+                <label>名称</label>
+                <input type="text" id="feixun-contact-name-input" placeholder="输入联系人名称">
+            </div>
+            <div class="feixun-edit-actions">
+                <button class="btn-cancel" id="feixun-edit-cancel">取消</button>
+                <button class="btn-delete" id="feixun-edit-delete" style="display:none;">删除</button>
+                <button class="btn-save" id="feixun-edit-save">保存</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- ===== 片段 7：顶部模式导航栏（注入到 #app-page 顶部） ===== -->
+<template data-ming-fragment="mode-nav">
+    <div id="ming-mode-nav" class="ming-mode-nav">
+        <button class="ming-mode-nav-btn" data-mode="zhan">战双模式</button>
+        <button class="ming-mode-nav-btn active" data-mode="ming">鸣潮模式</button>
+    </div>
+</template>

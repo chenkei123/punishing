@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战双帕弥什剧情二创网站</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 鸣潮模式独立样式（核心共享 + 模式独立 + 轻量通信） -->
+    <link rel="stylesheet" href="ming-mode/ming.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	<style>
+		/* 战双专属输入区域和鸣潮专属输入区域的显示/隐藏控制 */
+		body.ming-active .zhan-only-input {
+			display: none !important;
+		}
+		body:not(.ming-active) .ming-only-input {
+			display: none !important;
+		}
+	</style>
+	</head>
+<body>
+    <!-- 整页滚动容器 -->
+    <div id="full-page-scroll" class="full-page-scroll">
+        <!-- 欢迎页 -->
+        <section id="intro-page" class="scroll-page">
+            <!-- 黑色半透明浮层，通过伪元素实现 -->
+            <div class="intro-overlay"></div>
+            <!-- 滑动容器：包含战双/鸣潮两个欢迎页 -->
+            <div id="intro-slider" class="intro-slider">
+                <!-- 战双欢迎页面 -->
+                <div id="intro-zhan" class="intro-slide intro-slide-active" data-mode="zhan">
+                    <div class="intro-content">
+                        <h1>
+                            <span class="title-part left">战双剧情二创制作网页</span>
+                        </h1>
+                        <p class="subtitle">B站比翼苍穹制作</p>
+                    </div>
+                    <!-- 右侧引导箭头（仅在战双页面显示） -->
+                    <div id="arrow-right" class="slide-arrow slide-arrow-right" title="右滑进入鸣潮">
+                        <span class="arrow-icon">&#9658;</span>
+                        <span class="arrow-text">鸣潮</span>
+                    </div>
+                </div>
+                <!-- 鸣潮欢迎页面（由 ming-mode/ming.js 动态注入，避免全局污染） -->
+            </div>
+            <!-- 向下滑动指引 -->
+            <div class="scroll-indicator">
+                <span class="arrow"></span>
+                <span class="text">向下滑动进入</span>
+            </div>
+        </section>
+
+        <!-- 主应用页面 -->
+        <section id="app-page" class="scroll-page">
+            <!-- 顶部声明栏 -->
+            <div class="top-disclaimer-banner">
+                <span>⚠️ 声明：此网站为非官方二创网站，创作出作品后请说明是非官方的二创内容，请勿用于制作乱凑 CP 等令人感到不适的剧情内容！</span>
+            </div>
+
+            <!-- 鸣潮模式中立挂载点（由 ming.js 动态注入模式导航栏等） -->
+            <div id="ming-mode-root"></div>
+
+            <!-- 原有的 app 容器 -->
+            <div id="app">
+        <!-- 左侧面板 -->
+        <div id="left-panel" class="side-panel">
+            <div class="panel-content">
+                <!-- 背景设置 -->
+                <div class="section">
+                    <h3 class="section-title">背景设置</h3>
+                    <div class="subsection" id="bg-select-subsection">
+                        <label class="subsection-label">选择背景:</label>
+                        <div id="background-list" class="image-grid">
+                            <!-- 背景图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入背景:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-background" accept="image/*,video/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 功能搜索 -->
+                <div id="feature-search-bar" class="feature-search-bar-inline">
+                    <span class="search-icon"></span>
+                    <input type="text" id="feature-search-input" placeholder="搜索功能..." autocomplete="off" />
+                    <button id="feature-search-btn" title="搜索定位">搜索</button>
+                    <button id="feature-search-clear" title="清除搜索">×</button>
+                </div>
+                <div id="feature-search-results" class="feature-search-results"></div>
+
+                <!-- 角色立绘 -->
+                <div class="section">
+                    <h3 class="section-title">角色立绘</h3>
+                    <div class="subsection" id="left-char-select-subsection">
+                        <label class="subsection-label">选择角色:</label>
+                        <div id="left-character-list" class="image-grid">
+                            <!-- 角色图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入角色:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-character-left" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动画设置 -->
+                <div class="section">
+                    <h3 class="section-title">动画设置</h3>
+                    <div class="toggle-row">
+                        <span class="toggle-label">打字机动画:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="animation-toggle-left">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">动画速度: <span id="speed-value-left">50</span>ms</span>
+                        <input type="range" id="animation-speed-left" min="10" max="200" value="50" class="slider">
+                        <div class="slider-labels">
+                            <span>快</span>
+                            <span>慢</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 导出日志 -->
+                <div class="section">
+                    <button id="export-log-btn-left" class="btn btn-log" title="导出操作日志，便于排查问题">📋 导出日志</button>
+                </div>
+
+                <!-- 指挥官设置 -->
+                <div class="section" id="commander-section-left">
+                    <h3 class="section-title">指挥官设置</h3>
+                    <button id="commander-dialog-btn-left" class="btn btn-primary">指挥官对话</button>
+                </div>
+
+                <!-- 鸣潮模式左侧面板中立挂载点（由 ming.js 动态注入飞讯按钮等） -->
+                <div id="ming-left-slot"></div>
+
+                <!-- 导出按钮组 -->
+                    <div class="section button-group">
+                    <button id="export-btn-left" class="btn btn-success">导出画面</button>
+                    <button id="export-all-btn-left" class="btn btn-secondary">全部导出 (<span id="scene-count-left">1</span>)</button>
+                    <button id="export-gif-btn-left" class="btn btn-secondary">导出GIF动画</button>
+                    <button id="export-gif-fast-btn-left" class="btn btn-primary">快速导出GIF</button>
+                    <button id="export-mp4-btn-left" class="btn btn-secondary">导出MP4视频</button>
+                </div>
+
+                <!-- 导航按钮组 -->
+                <div class="section nav-buttons">
+                    <button id="prev-dialog-left" class="btn btn-warning">下一句</button>
+                    <button id="next-scene-left" class="btn btn-orange">下一幕</button>
+                </div>
+
+	                <!-- 撤回按钮组 -->
+	                <div class="section undo-buttons">
+	                    <button id="undo-left" class="btn btn-gray">撤回</button>
+	                    <button id="undo-all-left" class="btn btn-gray">全部撤回</button>
+	                    <!-- 新增查看暂存快照按钮 -->
+	                    <button id="view-saved-left" class="btn btn-info">查看暂存</button>
+	                    <!-- 主控保存修改（仅在加载快照并修改后显示） -->
+	                    <button id="save-snapshot-left" class="btn btn-success" style="display:none;">保存修改</button>
+	                </div>
+	                
+            </div>
+        </div>
+
+        <!-- 中间预览区域 -->
+        <div id="preview-area" class="preview-area">
+            <div class="preview-wrapper">
+                <!-- 飞讯图片关联区域（由 ming-mode/ming.js 动态注入） -->
+                <div id="preview-container" class="preview-container preview-mode-new">
+                    <!-- 背景层 (z-index: 1) -->
+                    <div id="preview-background" class="preview-background">
+                        <!-- 视频：仅当背景为视频时使用 -->
+                        <video id="background-video" class="background-video" muted playsinline style="display:none;"></video>
+                    </div>
+
+                    <div id="image-association-old" class="image-association image-association-old" style="position: absolute; top: 25px; right: 35px; z-index: 10; width: 210px; height: 40px; background-color: rgba(0, 0, 0, 0); border: 0px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                        <img src="backgrounds/UI.png" alt="图片关联" class="association-image" style="max-width: 250%; max-height: 250%; object-fit: contain;">
+                    </div>
+
+                    <!-- 鸣潮剧情模式：mc UI 全屏图片关联层（始终显示 mc UI.png，z-index 高于背景，不被选中/导入的背景遮盖） -->
+                    <div id="image-association-ming-ui" class="image-association image-association-ming-ui" style="position: absolute; top: 0px; right: 30px; z-index: 10; width: 210px; height: 40px; background-color: rgba(0, 0, 0, 0); border: 0px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                        <img src="backgrounds/mc UI.png" alt="图片关联" class="association-image" style="max-width: 220%; max-height: 220%; object-fit: contain;">
+                    </div>
+
+                    <!-- 新版：UI平铺图层 (z-index: 5) - 覆盖整个编辑区域，位于输入框之下 -->
+                    <div id="ui-tile-layer" img src="backgrounds/UI2.png" class="ui-tile-layer ui-layer-new"></div>
+
+                    <!-- 新版：底部渐变遮罩层 (z-index: 6) - 底部25%黑色渐变，使文字更清晰 -->
+                    <div id="bottom-gradient" class="bottom-gradient ui-layer-new"></div>
+
+                    <!-- 新版：图片关联层 - 位于最上方，透明度叠加效果 -->
+                    <div id="image-association-center" class="image-association ui-layer-new" style="position: absolute; top:47%; left: 42%; transform: translate(-50%, -50%); z-index: 999; width: 500px; height: 250px; background-color: rgba(0, 0, 0, 0); border: 0px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                        <img src="backgrounds/5.png" alt="图片关联" class="association-image" style="max-width: 220%; max-height: 220%; object-fit: contain; opacity: 0.85;">
+                    </div>
+
+                    <!-- 角色层 (z-index: 10) -->
+                    <div id="character-layer" class="character-layer">
+                        <!-- 角色立绘将在这里动态添加 -->
+                    </div>
+
+                    <!-- 指挥官对话框 (z-index: 100) -->
+                    <div id="commander-dialog" class="commander-dialog" style="display: none;">
+                        <textarea id="commander-text" class="commander-text" placeholder="输入指挥官对话内容..."></textarea>
+                    </div>
+
+                    <!-- 对话区域 (z-index: 50) - 位于背景图内部底部 -->
+                    <div class="dialog-area">
+                        <div id="character-name-wrapper" class="character-name-wrapper">
+                            <textarea 
+                                id="character-name" 
+                                class="character-name bg-transparent text-white text-xl font-bold border-b border-white pb-1 focus:outline-none resize-none" 
+                                placeholder="角色名称" 
+                                rows="1" 
+                                cols="40">???</textarea>
+                        </div>
+                        <div class="dialog-input-wrapper">
+                            <textarea id="dialog-input" class="dialog-input" placeholder="请输入文本。" rows="3"></textarea>
+                            <div id="dialog-formatted-overlay" class="dialog-formatted-overlay ui-layer-new" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <!-- 鸣潮模式预览区中立挂载点（由 ming.js 动态注入飞讯容器等） -->
+                    <div id="ming-preview-slot"></div>
+                </div>
+                <!-- 视频背景进度条（仅当背景为视频时显示） -->
+                <div id="video-progress-bar" class="video-progress-bar" style="display:none;">
+                    <span id="video-current-time" class="video-time-label">0:00</span>
+                    <input type="range" id="video-seek-slider" class="video-seek-slider" min="0" max="100" value="0" step="0.01">
+                    <span id="video-duration" class="video-time-label">0:00</span>
+                    <button id="video-toggle-play" class="video-toggle-btn" title="播放/暂停">&#9654;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div id="right-panel" class="side-panel">
+            <div class="panel-content">
+                <!-- 角色设置 -->
+                <div class="section">
+                    <h3 class="section-title">角色设置</h3>
+                    <div class="subsection" id="right-char-select-subsection">
+                        <label class="subsection-label">选择角色:</label>
+                        <div id="right-character-list" class="image-grid">
+                            <!-- 角色图片将动态添加 -->
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">导入角色:</label>
+                        <div class="file-input-wrapper">
+                            <button class="file-btn">选择文件</button>
+                            <span class="file-name">未选择文件</span>
+                            <input type="file" id="upload-character-right" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动画设置 -->
+                <div class="section">
+                    <h3 class="section-title">动画设置</h3>
+                    <div class="toggle-row">
+                        <span class="toggle-label">打字机动画:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="animation-toggle-right">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">动画速度: <span id="speed-value-right">50</span>ms</span>
+                        <input type="range" id="animation-speed-right" min="10" max="200" value="50" class="slider">
+                        <div class="slider-labels">
+                            <span>快</span>
+                            <span>慢</span>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- 鸣潮模式右侧面板中立挂载点（由 ming.js 动态注入飞讯按钮等） -->
+                <div id="ming-right-slot"></div>
+
+            <!-- 更多设置 -->
+            <div class="section" id="more-settings-section">
+                <h3 class="section-title">
+                    <span>更多设置</span>
+                    <span id="more-settings-arrow">▼</span>
+                </h3>
+                <div id="more-settings-content" class="more-settings-content collapsed">
+                    <!-- UI风格切换开关 -->
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                        <span style="font-size: 13px; color: #aaa;" id="switch-label-old">旧版</span>
+                        <label style="position: relative; display: inline-block; width: 48px; height: 24px;">
+                            <input type="checkbox" id="ui-style-switch" checked style="opacity: 0; width: 0; height: 0;">
+                            <span style="position: absolute; cursor: pointer; top:0;left:0;right:0;bottom:0;background-color:#3d3d5c;transition:.3s;border-radius:24px;"></span>
+                            <span style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;"></span>
+                        </label>
+                        <span style="font-size: 13px; color: #fff; font-weight: 600;" id="switch-label-new">新版</span>
+                    </div>
+                    <!-- 全部导出格式 -->
+                    <div class="subsection">
+                        <label class="subsection-label">全部导出格式:</label>
+                        <div class="format-buttons">
+                            <button id="export-all-format-gif" class="format-btn active">GIF分片</button>
+                            <button id="export-all-format-mp4" class="format-btn">MP4视频(合)</button>
+                        </div>
+                    </div>
+                    <!-- 压缩打包设置 -->
+                    <div class="subsection">
+                        <label class="subsection-label">压缩打包导出:</label>
+                        <div class="toggle-row">
+                            <span class="toggle-label">启用ZIP打包:</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="zip-export-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="slider-row">
+                            <span class="slider-label">每包场景数: <span id="zip-batch-size-value">10</span>个</span>
+                            <input type="range" id="zip-batch-size" min="5" max="50" value="10" class="slider">
+                            <div class="slider-labels">
+                                <span>5</span>
+                                <span>50</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 导出设置 -->
+                    <div class="subsection">
+                        <label class="subsection-label">分辨率(16:9，推荐1920px): <span id="export-resolution-value">1920</span>px宽</label>
+                        <input type="range" id="export-resolution" min="720" max="3840" value="1920" step="120" class="slider">
+                        <div class="slider-labels">
+                            <span>720p</span>
+                            <span>1920p</span>
+                            <span>3840p</span>
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">PNG质量: <span id="export-png-quality-value">1.0</span> (1.0=最好,0.5=最差，推荐0.9)</label>
+                        <input type="range" id="export-png-quality" min="0.5" max="1.0" value="1.0" step="0.1" class="slider">
+                        <div class="slider-labels">
+                            <span>最差</span>
+                            <span>最好</span>
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">GIF质量: <span id="export-quality-value">1</span> (1=最好,10=最差，推荐2)</label>
+                        <input type="range" id="export-quality" min="1" max="10" value="1" class="slider">
+                        <div class="slider-labels">
+                            <span>最好</span>
+                            <span>最差</span>
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">MP4质量: <span id="export-mp4-quality-value">5</span> (1=最低,10=最高，推荐5)</label>
+                        <input type="range" id="export-mp4-quality" min="1" max="10" value="5" step="1" class="slider">
+                        <div class="slider-labels">
+                            <span>低</span>
+                            <span>高</span>
+                        </div>
+                    </div>
+                    <!-- 文本设置 -->
+                    <div class="subsection">
+                        <label class="subsection-label">文本颜色: <span id="dialog-color-value">#ffffff</span></label>
+                        <input type="color" id="dialog-color-input-compact" value="#ffffff" class="color-input-compact">
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">文本大小: <span id="dialog-size-value">16px</span></label>
+                        <div class="format-buttons">
+                            <button id="dialog-size-decrease-compact" class="format-btn" title="减小字号">A-</button>
+                            <button id="dialog-size-increase-compact" class="format-btn" title="增大字号">A+</button>
+                        </div>
+                    </div>
+                    <!-- 接下来的文本格式 -->
+                    <div class="subsection">
+                        <label class="subsection-label">接下来的文本格式:</label>
+                        <div class="subsection">
+                            <label class="subsection-label">接下来的文本颜色: <span id="sel-format-color-value">-</span></label>
+                            <input type="color" id="sel-format-color" value="#ffffff" class="color-input-compact">
+                        </div>
+                        <div class="subsection">
+                            <label class="subsection-label">接下来的文本大小: <span id="sel-format-size-value">-</span></label>
+                            <div class="format-buttons">
+                                <button id="sel-format-size-decrease" class="format-btn" title="减小字号">A-</button>
+                                <button id="sel-format-size-increase" class="format-btn" title="增大字号">A+</button>
+                            </div>
+                        </div>
+                        <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:4px;">与全局文本颜色/大小不同时，后续输入的文字按此设置输出</div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">指挥官文本颜色: <span id="commander-color-value">#000000</span></label>
+                        <input type="color" id="commander-color-input-compact" value="#000000" class="color-input-compact">
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">指挥官文本大小: <span id="commander-size-value">14px</span></label>
+                        <div class="format-buttons">
+                            <button id="commander-size-decrease-compact" class="format-btn" title="减小字号">A-</button>
+                            <button id="commander-size-increase-compact" class="format-btn" title="增大字号">A+</button>
+                        </div>
+                    </div>
+                    <!-- 指挥官设置 -->
+                    <div class="subsection">
+                        <button id="commander-dialog-btn-right" class="btn btn-primary" style="width: 100%;">指挥官对话</button>
+                    </div>
+                    <!-- 工程 JSON -->
+                    <div class="subsection">
+                        <label class="subsection-label">工程数据 (JSON)</label>
+                        <div class="format-buttons" style="flex-wrap: wrap; gap: 8px;">
+                            <button type="button" id="export-project-json-btn" class="btn btn-secondary" style="flex:1;min-width:120px;">导出 JSON</button>
+                            <button type="button" id="import-project-json-btn" class="btn btn-secondary" style="flex:1;min-width:120px;">导入 JSON</button>
+                        </div>
+                        <input type="file" id="import-project-json-input" accept=".json,application/json" hidden>
+                        <div style="color:rgba(255,255,255,0.45);font-size:11px;margin-top:6px;">导出当前场景、暂存、角色与背景列表及格式设置；导入将替换当前页面中的工程数据。</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频字幕段批量编辑（当视频背景激活时显示）-->
+            <div class="section" id="subtitle-batch-edit-section" style="display:none;">
+                <h3 class="section-title">
+                    <span>字幕段批量编辑</span>
+                    <span id="subtitle-batch-arrow">▼</span>
+                </h3>
+                <div id="subtitle-batch-content" class="more-settings-content collapsed">
+                    <div id="subtitle-segments-list" style="max-height:300px; overflow-y:auto;"></div>
+                    <button id="add-subtitle-segment-btn" class="btn btn-primary" style="width:100%; margin-top:10px;">添加新段</button>
+                </div>
+            </div>
+
+                <!-- 视频显示设置（当视频背景激活时显示）-->
+                <div class="section" id="video-settings-section" style="display:none;">
+                    <h3 class="section-title">视频显示设置</h3>
+                    <div id="video-control-panel-container"></div>
+                </div>
+
+                <!-- 导出按钮组 -->
+                <div class="section button-group">
+                    <button id="export-btn-right" class="btn btn-success">导出画面</button>
+                    <button id="export-all-btn-right" class="btn btn-secondary">全部导出 (<span id="scene-count-right">1</span>)</button>
+                    <button id="export-gif-btn-right" class="btn btn-secondary">导出GIF动画</button>
+                    <button id="export-gif-fast-btn-right" class="btn btn-primary">快速导出GIF</button>
+                    <button id="export-mp4-btn-right" class="btn btn-secondary">导出MP4视频</button>
+                </div>
+
+                <!-- 导航按钮组 -->
+                <div class="section nav-buttons">
+                    <button id="prev-dialog-right" class="btn btn-warning">下一句</button>
+                    <button id="next-scene-right" class="btn btn-orange">下一幕</button>
+                </div>
+
+	                <!-- 撤回按钮组 -->
+	                <div class="section undo-buttons">
+	                    <button id="undo-right" class="btn btn-gray">撤回</button>
+	                    <button id="undo-all-right" class="btn btn-gray">全部撤回</button>
+	                    <!-- 新增查看暂存快照按钮 -->
+	                    <button id="view-saved-right" class="btn btn-info">查看暂存</button>
+	                    <!-- 主控保存修改（仅在加载快照并修改后显示） -->
+	                    <button id="save-snapshot-right" class="btn btn-success" style="display:none;">保存修改</button>
+	                </div>
+	                
+            </div>
+        </div>
+
+        <!-- 折叠按钮：放在 #app 内最上层，折叠时仍可见 -->
+        <button id="fold-left" class="fold-btn" title="收起左侧面板" aria-label="收起左侧面板">◀</button>
+        <button id="fold-right" class="fold-btn" title="收起右侧面板" aria-label="收起右侧面板">▶</button>
+    </div>
+
+    <!-- 暂存场景预览模态框 -->
+    <div id="saved-scenes-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>已暂存的场景历史</h3>
+            <div class="snapshot-list"></div>
+            <div class="modal-footer">
+                <button id="add-new-scene-btn" class="btn btn-primary">添加新画面</button>
+                <button class="modal-close btn btn-secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+	    <!-- GIF导出进度模态框 -->
+	    <div id="export-progress-modal" class="modal" style="display:none;">
+	        <div class="modal-content export-progress-content">
+	            <span id="export-progress-close" class="modal-close-cross">×</span>
+	            <h3 id="export-progress-title">GIF导出中</h3>
+	            <div class="progress-container">
+	                <div class="progress-bar">
+	                    <div id="export-progress-bar" class="progress-fill"></div>
+	                </div>
+	                <div id="export-progress-text" class="progress-text">准备中...</div>
+	            </div>
+	            <div id="export-all-progress-info" class="export-all-info" style="display:none;">
+	                <div class="progress-bar">
+	                    <div id="export-all-progress-bar" class="progress-fill"></div>
+	                </div>
+	                <div id="export-all-progress-text" class="progress-text">总进度: 0/0</div>
+	            </div>
+	            <p class="export-tip">请勿关闭页面或重复点击导出按钮</p>
+	            <button id="export-cancel-btn" class="cancel-btn" style="display:none;">取消导出</button>
+	            <button id="export-close-btn" class="btn btn-secondary" style="display:none; margin-top: 10px;">关闭窗口</button>
+	        </div>
+	    </div>
+
+	        <!-- 导出预览模态框 -->
+	        <div id="export-preview-modal" class="modal" style="display:none;">
+	            <div class="modal-content export-preview-content">
+	                <span class="modal-close">×</span>
+	                <h3>导出预览</h3>
+	                <p>勾选要导出的场景（总计：<span id="total-scenes-count">0</span>个，预计总时长：<span id="total-duration">0.0</span>s）</p>
+	                <div id="export-preview-list" class="export-preview-list">
+	                    <!-- 预览列表项将动态添加到这里 -->
+	                </div>
+	                <div class="modal-footer">
+	                    <button id="confirm-export-btn" class="btn btn-success">确认导出</button>
+	                    <button id="cancel-export-btn" class="btn btn-secondary">取消</button>
+	                </div>
+	            </div>
+	        </div>
+	        
+	        </div> <!-- 关闭 app -->
+	    </section> <!-- 关闭 app-page -->
+	    </div> <!-- 关闭 full-page-scroll -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script src="script.js"></script>
+    <!-- 鸣潮模式独立模块（IIFE 封装，核心共享 + 模式独立 + 轻量通信） -->
+    <script src="ming-mode/ming.js"></script>
+</body>
+</html>

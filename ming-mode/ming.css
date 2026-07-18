@@ -1,0 +1,1167 @@
+/* ============================================================
+ * ming.css —— 鸣潮模式独立样式
+ * 架构：核心共享 + 模式独立 + 轻量通信
+ * 本文件仅包含鸣潮/飞讯相关样式，与战双版 styles.css 相互独立。
+ * ============================================================ */
+
+/* === 欢迎页滑动切换系统（鸣潮相关部分） === */
+
+/* 鸣潮页面：初始隐藏在右侧 */
+.ming-mode-root .intro-slide[data-mode="ming"] {
+    background: url('../backgrounds/mc1.jpg') center center / cover repeat;
+    transform: translateX(100%);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* 鸣潮页面激活状态（显示） */
+.ming-mode-root .intro-slide[data-mode="ming"].intro-slide-active {
+    transform: translateX(0);
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* 战双页面被滑走的状态（隐藏到左侧） */
+.ming-mode-root .intro-slide[data-mode="zhan"].intro-slide-hidden-left {
+    transform: translateX(-100%);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* 引导箭头通用样式 */
+.ming-mode-root .slide-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 10;
+    color: rgba(255, 255, 255, 0.85);
+    transition: all 0.3s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 16px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+}
+
+.ming-mode-root .slide-arrow:hover {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.ming-mode-root .slide-arrow:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+/* 右侧箭头（战双页面 → 右滑进入鸣潮） */
+.ming-mode-root .slide-arrow-right {
+    right: 20px;
+}
+
+/* 左侧箭头（鸣潮页面 → 左滑进入战双） */
+.ming-mode-root .slide-arrow-left {
+    left: 20px;
+}
+
+/* 箭头图标 */
+.ming-mode-root .slide-arrow .arrow-icon {
+    font-size: 28px;
+    line-height: 1;
+    animation: arrow-pulse-horizontal 1.8s ease-in-out infinite;
+}
+
+.ming-mode-root .slide-arrow-right .arrow-icon {
+    animation-name: arrow-pulse-right;
+}
+
+.ming-mode-root .slide-arrow-left .arrow-icon {
+    animation-name: arrow-pulse-left;
+}
+
+@keyframes arrow-pulse-right {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(6px); opacity: 1; }
+}
+
+@keyframes arrow-pulse-left {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(-6px); opacity: 1; }
+}
+
+/* 箭头文字 */
+.ming-mode-root .slide-arrow .arrow-text {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+/* === 鸣潮模式下隐藏的元素 === */
+.ming-mode-root .ming-hidden {
+    display: none !important;
+}
+
+/* === 顶部模式导航栏 === */
+.ming-mode-root .ming-mode-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    background: rgba(20, 20, 30, 0.85);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(232, 193, 112, 0.2);
+    z-index: 500;
+    flex-shrink: 0;
+}
+
+/* 导航栏移动到容器（#app-page）底部 */
+#app-page #ming-mode-root {
+    order: 5;
+    flex-shrink: 0;
+}
+
+.ming-mode-root .ming-mode-nav-btn {
+    flex: 1;
+    max-width: 200px;
+    padding: 10px 24px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    letter-spacing: 1px;
+}
+
+.ming-mode-root .ming-mode-nav-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: #e8c170;
+    transition: width 0.3s ease;
+}
+
+.ming-mode-root .ming-mode-nav-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ming-mode-root .ming-mode-nav-btn.active {
+    color: #e8c170;
+}
+
+.ming-mode-root .ming-mode-nav-btn.active::after {
+    width: 60%;
+}
+
+/* === 模式视图切换过渡 === */
+.ming-mode-root .ming-mode-view {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.ming-mode-root .ming-mode-view.active {
+    display: block;
+    opacity: 1;
+}
+
+/* ========== 鸣潮模式专属样式（不影响战双模式） ========== */
+
+/* 鸣潮飞讯模式下隐藏战双专属元素（剧情模式保留 dialog-area 等输入区域） */
+.ming-mode-root.ming-active #preview-container.feixun-mode .preview-background,
+.ming-mode-root.ming-active #preview-container.feixun-mode .character-layer,
+.ming-mode-root.ming-active #preview-container.feixun-mode .dialog-area,
+.ming-mode-root.ming-active #preview-container.feixun-mode .commander-dialog,
+.ming-mode-root.ming-active #preview-container.feixun-mode .ui-tile-layer,
+.ming-mode-root.ming-active #preview-container.feixun-mode .bottom-gradient,
+.ming-mode-root.ming-active #preview-container.feixun-mode .image-association-old,
+.ming-mode-root.ming-active #preview-container.feixun-mode .image-association-ming-ui,
+.ming-mode-root.ming-active #preview-container.feixun-mode .image-association-center {
+    display: none !important;
+}
+
+/* 鸣潮模式下隐藏图片关联层 #image-association-center */
+.ming-mode-root.ming-active #image-association-center {
+    display: none !important;
+}
+
+/* ===== 鸣潮剧情模式：图片关联层全屏覆盖 ===== */
+.ming-mode-root.ming-active #image-association-old {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1000;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    /* 新增：确保该元素自身创建新的层叠上下文，避免被父元素影响 */
+    isolation: isolate;
+}
+
+.ming-mode-root.ming-active #image-association-old img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+}
+
+/* ===== 鸣潮剧情模式：mc UI 全屏图片关联层（始终显示 mc UI.png，位于背景之上，不被遮盖） ===== */
+/* 该层独立于 #image-association-old，不会被 selectBackground 替换图片源 */
+.ming-mode-root.ming-active #image-association-ming-ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1001;  /* 高于 #image-association-old (z-index: 1000)，确保不被选中/导入的背景图片遮盖 */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    pointer-events: none;  /* 不阻挡下层交互（对话框、角色立绘等） */
+    isolation: isolate;
+}
+
+.ming-mode-root.ming-active #image-association-ming-ui img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+}
+
+/* 非鸣潮模式（战双模式）下隐藏 mc UI 全屏图片关联层 */
+body:not(.ming-active) #image-association-ming-ui {
+    display: none !important;
+}
+
+/* ===== 鸣潮剧情模式：角色名称居中 ===== */
+.ming-mode-root.ming-active #character-name-wrapper {
+    position: absolute !important;
+    top: -30% !important;
+    left: 64% !important;
+    transform: translate(-50%, -50%) !important;
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    z-index: 51;
+}
+
+.ming-mode-root.ming-active #character-name {
+    text-align: center !important;
+}
+
+/* 战双模式下隐藏鸣潮飞讯元素（防止切换到鸣潮后再切回战双时飞讯元素残留显示） */
+body:not(.ming-active) .feixun-container,
+body:not(.ming-active) .feixun-mode-only,
+body:not(.ming-active) .ming-story-only {
+    display: none !important;
+}
+
+/* 鸣潮剧情模式：显示背景选择，隐藏飞讯元素 */
+.ming-mode-root.ming-active .ming-story-only {
+    display: block;
+}
+
+/* 鸣潮飞讯模式：隐藏剧情模式专属元素 */
+.ming-mode-root.ming-active #preview-container.feixun-mode .ming-story-only,
+.ming-mode-root.ming-active.feixun-mode-active .ming-story-only {
+    display: none !important;
+}
+
+/* ========== 鸣潮飞讯模式专用样式 ========== */
+/* 仅在预览容器处于飞讯模式时生效 */
+
+/* ===== 1. 让预览容器透明（移除 !important 背景色）===== */
+.ming-mode-root #preview-container.feixun-mode {
+    display: flex !important;
+    flex-direction: row !important;
+    background: transparent !important;  /* ← 改为透明 */
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+    filter: none !important;
+}
+
+/* 飞讯模式：聊天气泡和头像图层最高，确保导出时位于最上层 */
+.ming-mode-root .feixun-message-bubble,
+.ming-mode-root .feixun-message-avatar {
+    position: relative;
+    z-index: 100 !important;
+}
+
+/* ===== 2. 飞讯容器透明 ===== */
+.ming-mode-root .feixun-container {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: transparent;  /* 改为完全透明 */
+    position: relative;
+}
+
+/* ===== 3. 主内容区保留原背景（联系人列表 + 聊天区域）===== */
+.ming-mode-root .feixun-main-row {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    overflow: hidden;
+    background: linear-gradient(180deg, #d5d5d5 0%, #c8c8c8 100%);  /* ← 原背景移到这里 */
+}
+
+/* ===== 飞讯图片关联区域（顶部横条，1200×60 比例，完全透明背景） ===== */
+.ming-mode-root .feixun-association-banner {
+    display: none;
+    width: 110%;
+    flex-shrink: 0;
+    aspect-raio: 1200 / 60;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: transparent !important;  /* 强制透明 */
+        transform: translateX(-60px);  /* 向左移动 30 像素，按需调整 */
+}
+
+.ming-mode-root .feixun-association-banner.visible {
+    display: flex;
+}
+
+.ming-mode-root .feixun-association-banner.visible {
+    display: flex;
+}
+
+.ming-mode-root .feixun-association-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    background: transparent;
+}
+
+.ming-mode-root #preview-container.feixun-mode .preview-background,
+.ming-mode-root #preview-container.feixun-mode .ui-tile-layer,
+.ming-mode-root #preview-container.feixun-mode .bottom-gradient,
+.ming-mode-root #preview-container.feixun-mode .image-association-old,
+.ming-mode-root #preview-container.feixun-mode .image-association-ming-ui,
+.ming-mode-root #preview-container.feixun-mode .image-association-center,
+.ming-mode-root #preview-container.feixun-mode .character-layer,
+.ming-mode-root #preview-container.feixun-mode .dialog-area {
+    display: none !important;
+}
+
+/* ===== 飞讯主容器 ===== */
+.ming-mode-root .feixun-container {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.ming-mode-root #preview-container.feixun-mode .feixun-container {
+    display: flex;
+}
+
+.ming-mode-root #preview-container.feixun-mode .feixun-container {
+    display: flex;
+}
+
+/* 主内容行：联系人列表 + 聊天区域（横向排列） */
+.ming-mode-root .feixun-main-row {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 飞讯模式下让预览区挂载点铺满容器，使右侧聊天区横向撑满 */
+.ming-mode-root #preview-container.feixun-mode #ming-preview-slot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ===== 左侧联系人列表 ===== */
+.ming-mode-root .feixun-contact-list {
+    width: 280px;
+    min-width: 280px;
+    background: rgb(231, 232, 232);
+    border-right: 1px solid rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 联系人列表区域 */
+.ming-mode-root .feixun-contacts-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+}
+
+.ming-mode-root .feixun-contacts-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ming-mode-root .feixun-contacts-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ming-mode-root .feixun-contacts-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+}
+
+/* 联系人项 */
+.ming-mode-root .feixun-contact-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    margin: 0 8px 4px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border: 2px solid transparent;
+    /* 背景关联图片由 JS 动态设置 background-image */
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+/* 背景遮罩层：用于 hover/active 状态的半透明覆盖，位于背景图之上、内容之下 */
+.ming-mode-root .feixun-contact-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: transparent;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.ming-mode-root .feixun-contact-item:hover::before {
+    background: rgba(255,255,255,0.1);
+}
+
+.ming-mode-root .feixun-contact-item.active::before {
+    background: rgba(255,255,255,0.15);
+}
+
+.ming-mode-root .feixun-contact-item.active {
+    border-color: #e8c170;
+    box-shadow: 0 2px 8px rgba(232,193,112,0.2);
+}
+
+/* 确保头像、名字、箭头等子元素位于背景图和遮罩之上 */
+.ming-mode-root .feixun-contact-avatar,
+.ming-mode-root .feixun-contact-info,
+.ming-mode-root .feixun-contact-arrow,
+.ming-mode-root .feixun-contact-dialogues {
+    position: relative;
+    z-index: 1;
+}
+
+/* 联系人头像 */
+.ming-mode-root .feixun-contact-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin-right: 12px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.ming-mode-root .feixun-contact-avatar:hover::after {
+    content: '\270E';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.ming-mode-root .feixun-contact-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ming-mode-root .feixun-contact-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* 联系人信息 */
+.ming-mode-root .feixun-contact-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ming-mode-root .feixun-contact-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ming-mode-root .feixun-contact-preview {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 下拉箭头 */
+.ming-mode-root .feixun-contact-arrow {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.ming-mode-root .feixun-contact-item.expanded .feixun-contact-arrow {
+    transform: rotate(180deg);
+}
+
+/* 展开的对话列表 */
+.ming-mode-root .feixun-contact-dialogues {
+    display: none;
+    margin: 4px 8px 8px 66px;
+    padding-left: 12px;
+    border-left: 2px solid rgba(201,169,110,0.3);
+}
+
+.ming-mode-root .feixun-contact-item.expanded .feixun-contact-dialogues {
+    display: block;
+}
+
+.ming-mode-root .feixun-dialogue-summary {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ming-mode-root .feixun-dialogue-summary:hover {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+}
+
+.ming-mode-root .feixun-dialogue-summary.active {
+    background: rgba(232,193,112,0.18);
+    color: #e8c170;
+    border-left: 3px solid #e8c170;
+}
+
+/* ===== 右侧聊天区域 ===== */
+.ming-mode-root .feixun-chat-area {
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color:rgb(217, 220, 223);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 聊天区域顶部 */
+.ming-mode-root .feixun-chat-header {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background-color: rgb(217, 220, 223);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 聊天头部图片关联层（MC4.png 铺满） */
+.ming-mode-root .feixun-chat-header-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../backgrounds/MC4.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 确保聊天头部文字位于图片关联层之上 */
+.ming-mode-root .feixun-chat-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ming-mode-root .feixun-chat-header #feixun-chat-title-text {
+    position: relative;
+    z-index: 1;
+}
+
+.ming-mode-root .feixun-chat-header #feixun-chat-title-text {
+    outline: none;
+    cursor: text;
+    border-radius: 4px;
+    padding: 2px 6px;
+    min-width: 80px;
+    display: inline-block;
+}
+
+/* 个性标签 */
+.ming-mode-root .feixun-chat-tag {
+    outline: none;
+    cursor: text;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.7);
+    display: inline-block;
+    min-width: 60px;
+}
+
+.ming-mode-root .feixun-chat-tag:focus {
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 2px rgba(232,193,112,0.4);
+    color: #333;
+}
+
+.ming-mode-root .feixun-chat-tag:empty::before {
+    content: '点击编辑个性标签';
+    color: #999;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.ming-mode-root .feixun-chat-header #feixun-chat-title-text:focus {
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 2px rgba(232,193,112,0.4);
+}
+
+.ming-mode-root .feixun-chat-header #feixun-chat-title-text:empty::before {
+    content: '点击编辑名称';
+    color: #999;
+    font-weight: 400;
+    font-size: 13px;
+}
+
+/* 消息列表 */
+.ming-mode-root .feixun-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: transparent;
+    position: relative;
+    z-index: 2;
+}
+
+/* 消息列表图片关联层（MC3.png 铺满） */
+.ming-mode-root .feixun-messages-bg {
+    position: absolute;
+    top: 52px;  /* 聊天头部高度 */
+    left: 0;
+    width: 100%;
+    bottom: 0;
+    background-image: url('../backgrounds/MC3.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* 确保消息项位于图片关联层之上 */
+.ming-mode-root .feixun-messages .feixun-message {
+    position: relative;
+    z-index: 1;
+}
+
+.ming-mode-root .feixun-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ming-mode-root .feixun-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ming-mode-root .feixun-messages::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.12);
+    border-radius: 3px;
+}
+
+/* 消息项 */
+.ming-mode-root .feixun-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 100%;
+    width: 100%;
+    animation: feixun-message-in 0.3s ease;
+}
+
+@keyframes feixun-message-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ming-mode-root .feixun-message.left {
+    align-self: flex-start;
+    justify-content: flex-start;
+}
+
+.ming-mode-root .feixun-message.right {
+    align-self: flex-end;
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+}
+
+/* 消息头像 */
+.ming-mode-root .feixun-message-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid rgba(0,0,0,0.08);
+    background: #f0f0f0;
+    cursor: pointer;
+    position: relative;
+}
+
+.ming-mode-root .feixun-message-avatar:hover::after {
+    content: '\270E';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.ming-mode-root .feixun-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ming-mode-root .feixun-message-avatar .msg-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 消息内容区 */
+.ming-mode-root .feixun-message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 70%;
+}
+
+.ming-mode-root .feixun-message-sender {
+    font-size: 12px;
+    color: #888;
+    margin-left: 4px;
+}
+
+.ming-mode-root .feixun-message.right .feixun-message-sender {
+    text-align: right;
+    margin-left: 0;
+    margin-right: 4px;
+}
+
+/* 消息气泡 - 根据内容自动伸缩 */
+.ming-mode-root .feixun-message-bubble {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    position: relative;
+    min-width: 40px;
+    width: auto;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+/* 左侧消息气泡 - 联系人（白色） */
+.ming-mode-root .feixun-message.left .feixun-message-bubble {
+    background-color: rgb(255, 255, 255);
+    color: rgb(42, 45, 49);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* 右侧消息气泡 - 漂泊者（灰黑色，透明度0.4） */
+.ming-mode-root .feixun-message.right .feixun-message-bubble {
+    background: rgba(37, 41, 46, 0.4);
+    color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* 可编辑的消息气泡 */
+.ming-mode-root .feixun-message-bubble[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    min-height: 20px;
+}
+
+.ming-mode-root .feixun-message-bubble[contenteditable="true"]:focus {
+    box-shadow: 0 0 0 2px rgba(232,193,112,0.5);
+}
+
+.ming-mode-root .feixun-message-bubble[contenteditable="true"]:empty::before {
+    content: '点击输入消息...';
+    color: #aaa;
+    font-size: 13px;
+}
+
+.ming-mode-root .feixun-message.right .feixun-message-bubble[contenteditable="true"]:empty::before {
+    color: #777;
+}
+
+/* 消息操作按钮 */
+.ming-mode-root .feixun-message-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: 2px;
+}
+
+.ming-mode-root .feixun-message:hover .feixun-message-actions {
+    opacity: 1;
+}
+
+.ming-mode-root .feixun-msg-action-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.06);
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ming-mode-root .feixun-msg-action-btn:hover {
+    background: rgba(0,0,0,0.12);
+    color: #333;
+}
+
+.ming-mode-root .feixun-msg-action-btn.delete:hover {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+}
+
+/* ===== 联系人编辑弹窗 ===== */
+.ming-mode-root .feixun-contact-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.ming-mode-root .feixun-contact-edit-modal.active {
+    display: flex;
+}
+
+.ming-mode-root .feixun-edit-panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.ming-mode-root .feixun-edit-panel h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.ming-mode-root .feixun-edit-field {
+    margin-bottom: 14px;
+}
+
+.ming-mode-root .feixun-edit-field label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.ming-mode-root .feixun-edit-field input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.ming-mode-root .feixun-edit-field input[type="text"]:focus {
+    border-color: #667eea;
+}
+
+.ming-mode-root .feixun-avatar-upload {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px dashed #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    background: #f8f8f8;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.ming-mode-root .feixun-avatar-upload:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.ming-mode-root .feixun-avatar-upload img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ming-mode-root .feixun-avatar-upload .upload-hint {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+    padding: 4px;
+}
+
+.ming-mode-root .feixun-edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.ming-mode-root .feixun-edit-actions button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-save {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-save:hover {
+    opacity: 0.9;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-cancel:hover {
+    background: #e0e0e0;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-delete {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.ming-mode-root .feixun-edit-actions .btn-delete:hover {
+    background: #fecaca;
+}
+
+/* ===== 飞讯模式专用按钮显隐 ===== */
+.ming-mode-root .feixun-mode-only {
+    display: none !important;
+}
+
+.ming-mode-root.feixun-mode-active .feixun-mode-only {
+    display: block !important;
+}
+
+/* 飞讯模式下隐藏左侧指挥官设置（鸣潮版无此 DOM，此规则仅为兼容共享外壳） */
+.ming-mode-root.feixun-mode-active #commander-section-left {
+    display: none !important;
+}
+
+/* 隐藏飞讯模式下的战双专属元素 */
+.ming-mode-root.feixun-mode-active .ming-hidden {
+    display: none !important;
+}
+
+/* ===== 模式切换过渡动画 ===== */
+.ming-mode-root .intro-slide {
+    transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.45s ease;
+    will-change: transform, opacity;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+.ming-mode-root .feixun-contact-list {
+        width: 220px;
+        min-width: 220px;
+    }
+
+}/* 1. 左侧消息：头像和气泡整体靠左 */
+.ming-mode-root .feixun-message.left {
+    justify-content: flex-start;
+}
+
+/* 2. 右侧消息：头像和气泡整体靠右（row-reverse 下 flex-start 即右侧） */
+.ming-mode-root .feixun-message.right {
+    justify-content: flex-start;
+}
+
+/* 3. 左侧消息内容区：取消拉伸，宽度随文字内容变化，最大不超过 70% 防止过长 */
+.ming-mode-root .feixun-message.left .feixun-message-content {
+    flex: 0 0 auto;
+    max-width: 70%;
+    align-items: flex-start;
+}
+
+/* 4. 右侧消息内容区：取消拉伸，宽度随文字内容变化，内部元素靠右，最大不超过 70% */
+.ming-mode-root .feixun-message.right .feixun-message-content {
+    flex: 0 0 auto;
+    max-width: 70%;
+    align-items: flex-end;
+}
+
+/* 5. 消息气泡宽度随文字自适应，不再强制 100% 撑满 */
+.ming-mode-root .feixun-message.left .feixun-message-bubble,
+.ming-mode-root .feixun-message.right .feixun-message-bubble {
+    width: auto;
+    min-width: 40px;
+}
+
+.ming-mode-root.ming-active .dialog-area {
+    position: absolute;
+    bottom: 80px;        /* 距离底部距离 */
+    left: 10%;           /* 水平位置 */
+    width: 80%;          /* 宽度 */
+    height: 30px;       /* 高度 */
+    z-index: 50;
+}
