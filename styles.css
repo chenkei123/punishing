@@ -790,6 +790,19 @@ input:checked + .toggle-slider:before {
 
 /* 图片关联样式 - 已移至HTML内联样式 */
 
+/* === 战双旧版右上角UI：默认隐藏，仅在战双旧版模式下显示 === */
+#image-association-old {
+    display: none !important;
+}
+
+/* 鸣潮模式下强制隐藏战双旧版UI */
+body.ming-active #image-association-old,
+body.ming-active #preview-container #image-association-old,
+body.ming-active #preview-container.preview-mode-old #image-association-old,
+body.ming-active #preview-container.preview-mode-new #image-association-old {
+    display: none !important;
+}
+
 /* === UI风格切换：预览容器模式切换逻辑（开关在"更多设置"面板中）=== */
 /* 旧版默认：隐藏新版专属元素，重置滤镜 */
 #preview-container.preview-mode-old {
@@ -799,7 +812,7 @@ input:checked + .toggle-slider:before {
     display: none !important;
 }
 
-/* 战双旧版模式下显示 image-association-old（右上角小图标） */
+/* 战双旧版模式下显示 image-association-old（右上角小图标）- 仅在非鸣潮模式下 */
 body:not(.ming-active) #preview-container.preview-mode-old #image-association-old {
     position: absolute !important;
     top: 25px !important;
