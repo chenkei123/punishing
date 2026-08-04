@@ -570,12 +570,20 @@ const elements = {
     dialogSizeDecreaseCompact: document.getElementById('dialog-size-decrease-compact'),
     dialogSizeIncreaseCompact: document.getElementById('dialog-size-increase-compact'),
     dialogSizeValueCompact: document.getElementById('dialog-size-value'),
+    // 文本对齐按钮
+    dialogAlignLeft: document.getElementById('dialog-align-left'),
+    dialogAlignCenter: document.getElementById('dialog-align-center'),
+    dialogAlignRight: document.getElementById('dialog-align-right'),
     // 文本格式化控件（完整版本 - 已删除）
 
     commanderColorInputCompact: document.getElementById('commander-color-input-compact'),
     commanderSizeDecreaseCompact: document.getElementById('commander-size-decrease-compact'),
     commanderSizeIncreaseCompact: document.getElementById('commander-size-increase-compact'),
     commanderSizeValueCompact: document.getElementById('commander-size-value'),
+    // 指挥官文本对齐按钮
+    commanderAlignLeft: document.getElementById('commander-align-left'),
+    commanderAlignCenter: document.getElementById('commander-align-center'),
+    commanderAlignRight: document.getElementById('commander-align-right'),
     // 选中文本格式控件
     dialogFormattedOverlay: document.getElementById('dialog-formatted-overlay'),
     selFormatColor: document.getElementById('sel-format-color'),
@@ -607,9 +615,7 @@ const elements = {
     dialogSizeIncrease: null,
     dialogWeightDecrease: null,
     dialogWeightIncrease: null,
-    dialogAlignLeft: null,
-    dialogAlignCenter: null,
-    dialogAlignRight: null,
+    // 注意：dialogAlignLeft/Right/Center 已在上方定义，不要重复设置为 null
     dialogSizeInfo: null,
     dialogWeightInfo: null,
     dialogAlignInfo: null,
@@ -620,9 +626,7 @@ const elements = {
     commanderSizeIncrease: null,
     commanderWeightDecrease: null,
     commanderWeightIncrease: null,
-    commanderAlignLeft: null,
-    commanderAlignCenter: null,
-    commanderAlignRight: null,
+    // 注意：commanderAlignLeft/Right/Center 已在上方定义，不要重复设置为 null
     commanderSizeInfo: null,
     commanderWeightInfo: null,
     commanderAlignInfo: null,
@@ -726,8 +730,12 @@ function init() {
     // 应用文本格式化
     applyDialogFormatting();
     applyCommanderFormatting();
+    
+    // 初始化对齐按钮状态
+    updateAlignButtons('dialog', state.textFormatting.dialog.textAlign);
+    updateAlignButtons('commander', state.textFormatting.commander.textAlign);
 
-    // 初始化接下来的文本格式显示（同全局时显示"-"）
+    // 初始化接下来的文本格式显示（同全局时显示"-")
     if (elements.selFormatColorValue) {
         elements.selFormatColorValue.textContent = '-';
     }
@@ -1059,6 +1067,11 @@ function refreshUIFromState() {
 
     applyDialogFormatting();
     applyCommanderFormatting();
+    
+    // 更新对齐按钮状态
+    updateAlignButtons('dialog', state.textFormatting.dialog.textAlign);
+    updateAlignButtons('commander', state.textFormatting.commander.textAlign);
+    
     updateDialogDisplay();
     updateSceneCount();
     updateFoldButtonTitles();
@@ -1174,7 +1187,12 @@ function createScene() {
         currentDialogIndex: 0,
         commanderText: '',
         // 视频字幕段数组，每个元素包含：id, startTime, endTime, characterName, dialogText, commanderText, formatRuns
-        videoSubtitleSegments: []
+        videoSubtitleSegments: [],
+        // 指挥官/漂泊者对话框时间段设置（视频模式下有效）
+        commanderDialogTimeStart: null,
+        commanderDialogTimeEnd: null,
+        // 是否根据视频时间自动显示/隐藏对话框
+        autoShowDialogByVideoTime: true
     };
     state.scenes.push(newScene);
     state.currentSceneIndex = state.scenes.length - 1;
@@ -1196,7 +1214,11 @@ function duplicateCurrentSceneForNextLine() {
         currentDialogIndex: 0,
         commanderText: '',
         // 复制视频字幕段数组
-        videoSubtitleSegments: JSON.parse(JSON.stringify(cur.videoSubtitleSegments || []))
+        videoSubtitleSegments: JSON.parse(JSON.stringify(cur.videoSubtitleSegments || [])),
+        // 复制指挥官对话框时间段设置
+        commanderDialogTimeStart: cur.commanderDialogTimeStart,
+        commanderDialogTimeEnd: cur.commanderDialogTimeEnd,
+        autoShowDialogByVideoTime: cur.autoShowDialogByVideoTime !== undefined ? cur.autoShowDialogByVideoTime : true
     };
     state.scenes.push(newScene);
     state.currentSceneIndex = state.scenes.length - 1;
@@ -1332,6 +1354,39 @@ const oldColor = state.textFormatting.dialog.color;
             }
         });
     }
+
+    // 文本对齐按钮事件
+    function setupAlignButtons(type) {
+        const prefix = type === 'dialog' ? 'dialog' : 'commander';
+        const alignButtons = [
+            elements[`${prefix}AlignLeft`],
+            elements[`${prefix}AlignCenter`],
+            elements[`${prefix}AlignRight`]
+        ];
+        
+        alignButtons.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const align = btn.dataset.align;
+                    state.textFormatting[type].textAlign = align;
+                    
+                    // 更新按钮状态
+                    alignButtons.forEach(b => b && b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 应用格式
+                    if (type === 'dialog') {
+                        applyDialogFormatting();
+                    } else {
+                        applyCommanderFormatting();
+                    }
+                });
+            }
+        });
+    }
+    
+    setupAlignButtons('dialog');
+    setupAlignButtons('commander');
 
     // 接下来的文本格式控件
     if (elements.selFormatColor) {
@@ -1726,18 +1781,32 @@ const VideoBgManager = {
     _toggleBtn: null,
     _controlPanel: null,
 
-    // 视频显示设置
-    _videoSettings: {
-        scale: 48,       // 缩放比例 (%) - 默认值从100改为48
-        posX: 37,        // 水平位置 (%) - 默认值从50改为37
-        posY: 37,        // 垂直位置 (%) - 默认值从50改为37
+    // 战双模式视频显示设置
+    _zhanVideoSettings: {
+        scale: 48,       // 缩放比例 (%)
+        posX: 37,        // 水平位置 (%)
+        posY: 37,        // 垂直位置 (%)
         opacity: 100     // 透明度 (%)
+    },
+    
+    // 鸣潮模式视频显示设置
+    _mingVideoSettings: {
+        scale: 100,      // 缩放比例 (%) - 鸣潮默认100%
+        posX: 50,        // 水平位置 (%) - 鸣潮默认50%
+        posY: 50,        // 垂直位置 (%) - 鸣潮默认50%
+        opacity: 100     // 透明度 (%) - 鸣潮默认100%
     },
 
     // 字幕轨数据 [{ startTime, endTime, text, id }]
     _subtitles: [],
     _currentSubtitleId: null,
     _subtitleOverlay: null,
+    
+    // 获取当前模式的视频设置
+    get _videoSettings() {
+        const isMingMode = document.body.classList.contains('ming-active');
+        return isMingMode ? this._mingVideoSettings : this._zhanVideoSettings;
+    },
 
     init() {
         this._videoEl = document.getElementById('background-video');
@@ -1877,6 +1946,10 @@ const VideoBgManager = {
 
     // ========== 视频控制面板 ==========
     _initControlPanel() {
+        // 根据当前模式获取默认值
+        const isMingMode = document.body.classList.contains('ming-active');
+        const defaultSettings = isMingMode ? this._mingVideoSettings : this._zhanVideoSettings;
+        
         // 创建控制面板 DOM
         const panel = document.createElement('div');
         panel.id = 'video-control-panel';
@@ -1887,33 +1960,33 @@ const VideoBgManager = {
                 <label style="color:#ccc; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
                     <span>缩放:</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="number" id="video-scale-num" value="48" min="10" max="200" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
+                        <input type="number" id="video-scale-num" value="${defaultSettings.scale}" min="10" max="200" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
                         <span>%</span>
-                        <input type="range" id="video-scale" min="10" max="200" value="48" style="width:80px;">
+                        <input type="range" id="video-scale" min="10" max="200" value="${defaultSettings.scale}" style="width:80px;">
                     </div>
                 </label>
                 <label style="color:#ccc; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
                     <span>水平位置:</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="number" id="video-posx-num" value="37" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
+                        <input type="number" id="video-posx-num" value="${defaultSettings.posX}" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
                         <span>%</span>
-                        <input type="range" id="video-posx" min="0" max="100" value="37" style="width:80px;">
+                        <input type="range" id="video-posx" min="0" max="100" value="${defaultSettings.posX}" style="width:80px;">
                     </div>
                 </label>
                 <label style="color:#ccc; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
                     <span>垂直位置:</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="number" id="video-posy-num" value="37" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
+                        <input type="number" id="video-posy-num" value="${defaultSettings.posY}" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
                         <span>%</span>
-                        <input type="range" id="video-posy" min="0" max="100" value="37" style="width:80px;">
+                        <input type="range" id="video-posy" min="0" max="100" value="${defaultSettings.posY}" style="width:80px;">
                     </div>
                 </label>
                 <label style="color:#ccc; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
                     <span>透明度:</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="number" id="video-opacity-num" value="100" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
+                        <input type="number" id="video-opacity-num" value="${defaultSettings.opacity}" min="0" max="100" style="width:50px; padding:4px; font-size:11px; text-align:center; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #555; border-radius:3px;">
                         <span>%</span>
-                        <input type="range" id="video-opacity" min="0" max="100" value="100" style="width:80px;">
+                        <input type="range" id="video-opacity" min="0" max="100" value="${defaultSettings.opacity}" style="width:80px;">
                     </div>
                 </label>
             </div>
@@ -1924,6 +1997,22 @@ const VideoBgManager = {
                     <span style="color:#ccc;">-</span>
                     <input type="number" id="subtitle-end" placeholder="结束(秒)" style="width:70px; padding:4px; font-size:11px;" min="0" step="0.1">
                 </div>
+            </div>
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #444;">
+                <div style="color:#fff; font-size:12px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                    <span>对话框时间段设置</span>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:11px; color:#ccc; cursor:pointer;">
+                        <input type="checkbox" id="auto-show-dialog-toggle" checked style="cursor:pointer;">
+                        自动跟随视频
+                    </label>
+                </div>
+                <div style="display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+                    <input type="number" id="commander-dialog-start" placeholder="开始(秒)" style="width:70px; padding:4px; font-size:11px;" min="0" step="0.1">
+                    <span style="color:#ccc;">-</span>
+                    <input type="number" id="commander-dialog-end" placeholder="结束(秒)" style="width:70px; padding:4px; font-size:11px;" min="0" step="0.1">
+                    <button id="commander-dialog-time-confirm" style="padding:4px 12px; font-size:11px; background:#4a9; color:#fff; border:none; border-radius:3px; cursor:pointer;">确定</button>
+                </div>
+                <div style="font-size:10px; color:#888;">设置时间段后点击确定，对话框仅在指定时间内显示</div>
             </div>
         `;
 
@@ -2027,6 +2116,76 @@ const VideoBgManager = {
                 self._applyVideoTransform();
             });
         }
+
+        // 对话框时间段设置
+        const dialogStartInput = document.getElementById('commander-dialog-start');
+        const dialogEndInput = document.getElementById('commander-dialog-end');
+        const autoShowToggle = document.getElementById('auto-show-dialog-toggle');
+        
+        if (dialogStartInput) {
+            dialogStartInput.addEventListener('change', function() {
+                if (state.scenes.length > 0) {
+                    const currentScene = state.scenes[state.currentSceneIndex];
+                    if (currentScene) {
+                        currentScene.commanderDialogTimeStart = this.value ? parseFloat(this.value) : null;
+                    }
+                }
+            });
+        }
+        
+        if (dialogEndInput) {
+            dialogEndInput.addEventListener('change', function() {
+                if (state.scenes.length > 0) {
+                    const currentScene = state.scenes[state.currentSceneIndex];
+                    if (currentScene) {
+                        currentScene.commanderDialogTimeEnd = this.value ? parseFloat(this.value) : null;
+                    }
+                }
+            });
+        }
+        
+        if (autoShowToggle) {
+            autoShowToggle.addEventListener('change', function() {
+                if (state.scenes.length > 0) {
+                    const currentScene = state.scenes[state.currentSceneIndex];
+                    if (currentScene) {
+                        currentScene.autoShowDialogByVideoTime = this.checked;
+                    }
+                }
+            });
+        }
+        
+        // 对话框时间段确定按钮
+        const confirmBtn = document.getElementById('commander-dialog-time-confirm');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                if (state.scenes.length > 0) {
+                    const currentScene = state.scenes[state.currentSceneIndex];
+                    if (currentScene) {
+                        const startInput = document.getElementById('commander-dialog-start');
+                        const endInput = document.getElementById('commander-dialog-end');
+                        
+                        const start = startInput ? parseFloat(startInput.value) : null;
+                        const end = endInput ? parseFloat(endInput.value) : null;
+                        
+                        if (isNaN(start) || isNaN(end) || end <= start) {
+                            alert('请设置有效的时间段（结束时间必须大于开始时间）');
+                            return;
+                        }
+                        
+                        currentScene.commanderDialogTimeStart = start;
+                        currentScene.commanderDialogTimeEnd = end;
+                        
+                        // 如果视频正在播放，立即应用设置
+                        if (self._videoEl && self._videoEl.currentTime) {
+                            self._syncDialogToVideoTime(self._videoEl.currentTime);
+                        }
+                        
+                        alert('对话框时间段已设置：' + start + '秒 - ' + end + '秒');
+                    }
+                }
+            });
+        }
     },
 
     _applyVideoTransform() {
@@ -2037,6 +2196,62 @@ const VideoBgManager = {
         const y = (s.posY - 50) * 2;
         this._videoEl.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
         this._videoEl.style.opacity = s.opacity / 100;
+    },
+
+    // 模式切换时更新控制面板显示
+    updateControlPanelForMode() {
+        const s = this._videoSettings;
+        
+        // 更新缩放控件
+        const scaleInput = document.getElementById('video-scale');
+        const scaleNum = document.getElementById('video-scale-num');
+        if (scaleInput) scaleInput.value = s.scale;
+        if (scaleNum) scaleNum.value = s.scale;
+        
+        // 更新水平位置控件
+        const posXInput = document.getElementById('video-posx');
+        const posXNum = document.getElementById('video-posx-num');
+        if (posXInput) posXInput.value = s.posX;
+        if (posXNum) posXNum.value = s.posX;
+        
+        // 更新垂直位置控件
+        const posYInput = document.getElementById('video-posy');
+        const posYNum = document.getElementById('video-posy-num');
+        if (posYInput) posYInput.value = s.posY;
+        if (posYNum) posYNum.value = s.posY;
+        
+        // 更新透明度控件
+        const opacityInput = document.getElementById('video-opacity');
+        const opacityNum = document.getElementById('video-opacity-num');
+        if (opacityInput) opacityInput.value = s.opacity;
+        if (opacityNum) opacityNum.value = s.opacity;
+        
+        // 应用当前设置到视频
+        this._applyVideoTransform();
+        
+        // 更新对话框时间段设置控件
+        this._updateDialogTimeControls();
+    },
+    
+    // 更新对话框时间段设置控件
+    _updateDialogTimeControls() {
+        if (state.scenes.length === 0) return;
+        const currentScene = state.scenes[state.currentSceneIndex];
+        if (!currentScene) return;
+        
+        const dialogStartInput = document.getElementById('commander-dialog-start');
+        const dialogEndInput = document.getElementById('commander-dialog-end');
+        const autoShowToggle = document.getElementById('auto-show-dialog-toggle');
+        
+        if (dialogStartInput) {
+            dialogStartInput.value = currentScene.commanderDialogTimeStart !== null ? currentScene.commanderDialogTimeStart : '';
+        }
+        if (dialogEndInput) {
+            dialogEndInput.value = currentScene.commanderDialogTimeEnd !== null ? currentScene.commanderDialogTimeEnd : '';
+        }
+        if (autoShowToggle) {
+            autoShowToggle.checked = currentScene.autoShowDialogByVideoTime !== false;
+        }
     },
 
     _showControlPanel() {
@@ -2065,8 +2280,15 @@ const VideoBgManager = {
             header.style.cursor = 'pointer';
             header.addEventListener('click', () => {
                 content.classList.toggle('collapsed');
+                content.classList.toggle('expanded');
                 if (arrow) arrow.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
             });
+        }
+        // 默认展开内容区域
+        if (content && content.classList.contains('collapsed')) {
+            content.classList.remove('collapsed');
+            content.classList.add('expanded');
+            if (arrow) arrow.textContent = '▼';
         }
     },
 
@@ -2284,34 +2506,34 @@ const VideoBgManager = {
     },
 
     // ========== 同步对话框到视频时间 ==========
+    // 注意：此函数只同步字幕内容到输入框，绝不自动显示/隐藏指挥官对话框
     _syncDialogToVideoTime(currentTime) {
         if (state.scenes.length === 0) return;
         const currentScene = state.scenes[state.currentSceneIndex];
         if (!currentScene || !currentScene.videoSubtitleSegments) return;
 
+        // 检查是否启用了根据视频时间自动同步字幕内容
+        const autoSync = currentScene.autoShowDialogByVideoTime !== false;
+        
         // 按开始时间排序
         const segments = [...currentScene.videoSubtitleSegments].sort((a, b) => a.startTime - b.startTime);
 
-        // 查找当前视频时间匹配的时间段
+        // 查找当前视频时间匹配的字幕段
         const matchedSegment = segments.find(
             s => currentTime >= s.startTime && currentTime <= s.endTime
         );
 
-        if (matchedSegment) {
+        // 同步字幕内容到输入框（仅在自动同步模式下）
+        // 注意：只同步文本内容，绝不自动显示对话框
+        if (autoSync && matchedSegment) {
             // 找到匹配段，设置输入框内容
             if (elements.characterName) elements.characterName.value = matchedSegment.characterName || '???';
             if (elements.dialogInput) elements.dialogInput.value = matchedSegment.dialogText || '';
             if (elements.commanderText) elements.commanderText.value = matchedSegment.commanderText || '';
-            // 显示指挥官对话框
-            if (elements.commanderDialog) elements.commanderDialog.style.display = 'block';
-        } else {
-            // 未找到匹配段，重置输入框
-            if (elements.characterName) elements.characterName.value = '???';
-            if (elements.dialogInput) elements.dialogInput.value = '';
-            if (elements.commanderText) elements.commanderText.value = '';
-            // 隐藏指挥官对话框
-            if (elements.commanderDialog) elements.commanderDialog.style.display = 'none';
         }
+        
+        // 对话框的显示/隐藏完全由用户手动控制，不在此函数中处理
+        // 用户可以通过左侧的"指挥官对话"/"漂泊者对话"按钮手动显示/隐藏对话框
     },
 
     // ========== 时间冲突检测 ==========
@@ -2832,6 +3054,10 @@ function updatePreview() {
             // 视频背景：隐藏 backgroundImage，使用 <video> 元素
             elements.previewBackground.style.backgroundImage = '';
             VideoBgManager.setVideoSrc(currentScene.background);
+            // 重新渲染字幕段列表（场景切换时）
+            if (VideoBgManager._renderSubtitleSegmentsList) {
+                VideoBgManager._renderSubtitleSegmentsList();
+            }
         } else {
             // 图片背景：正常显示，关闭视频
             VideoBgManager.hideVideo();
@@ -3430,6 +3656,26 @@ function isInitialSnapshot(snapshot) {
     return hasNoDialog && hasNoChars && hasNoCommander && bgMatches;
 }
 
+// 更新对齐按钮状态
+function updateAlignButtons(type, textAlign) {
+    const prefix = type === 'dialog' ? 'dialog' : 'commander';
+    const buttons = {
+        left: elements[`${prefix}AlignLeft`],
+        center: elements[`${prefix}AlignCenter`],
+        right: elements[`${prefix}AlignRight`]
+    };
+
+    Object.keys(buttons).forEach(key => {
+        if (buttons[key]) {
+            if (key === textAlign) {
+                buttons[key].classList.add('active');
+            } else {
+                buttons[key].classList.remove('active');
+            }
+        }
+    });
+}
+
 // 应用文本输入框格式化
 function applyDialogFormatting() {
     const format = state.textFormatting.dialog;
@@ -3747,24 +3993,6 @@ function _exportRestoreOverlay() {
 }
 
 // ============ 选中文本格式相关函数结束 ============
-function updateAlignButtons(type, textAlign) {
-    const prefix = type === 'dialog' ? 'dialog' : 'commander';
-    const buttons = {
-        left: elements[`${prefix}AlignLeft`],
-        center: elements[`${prefix}AlignCenter`],
-        right: elements[`${prefix}AlignRight`]
-    };
-
-    Object.keys(buttons).forEach(key => {
-        if (buttons[key]) {
-            if (key === textAlign) {
-                buttons[key].classList.add('active');
-            } else {
-                buttons[key].classList.remove('active');
-            }
-        }
-    });
-}
 
 // 显示导出进度
 function showExportProgress(title = '导出中', showCancel = false) {

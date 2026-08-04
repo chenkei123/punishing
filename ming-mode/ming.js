@@ -49,7 +49,7 @@
     <div id="intro-ming" class="intro-slide" data-mode="ming">
         <div class="intro-content">
             <h1>
-                <span class="title-part left">鸣潮剧情二创制作网页</span>
+                <span class="title-part left">鸣潮剧情二创制作网页（测试版）</span>
             </h1>
             <p class="subtitle">B站比翼苍穹制作</p>
         </div>
@@ -74,6 +74,14 @@
         <div class="feixun-main-row">
             <!-- 左侧联系人列表 -->
             <div class="feixun-contact-list">
+                <!-- 图片关联区（与联系人列表同宽） -->
+                <div class="feixun-contact-list-bg">
+                    <img src="backgrounds/feixun left.jpg" alt="联系人列表背景">
+                </div>
+                <div class="feixun-header">
+                    <div class="feixun-header-title">
+                    </div>
+                </div>
                 <div class="feixun-contacts-scroll" id="feixun-contacts-list">
                     <!-- 联系人项将动态生成 -->
                 </div>
@@ -247,11 +255,13 @@
         /** 初始化背景选择系统 */
         init: function () {
             if (this._initialized) return;
-            var saved = SharedConfig.readMing().currentBackground;
+            var config = SharedConfig.readMing();
+            var saved = config.currentBackground;
+            var isVideo = config.isVideo;
             if (saved) {
-                this.selectBackground(saved);
+                this.selectBackground(saved, isVideo);
             } else if (this.defaultBackgrounds.length > 3) {
-                this.selectBackground(this.defaultBackgrounds[3].url);
+                this.selectBackground(this.defaultBackgrounds[3].url, false);
             }
             this.renderBackgroundList();
             this.bindEvents();
@@ -261,10 +271,12 @@
         /** 重新应用当前背景（模式切换回来时调用） */
         reapplyBackground: function () {
             // 优先使用已保存的背景，其次使用默认背景
-            var saved = SharedConfig.readMing().currentBackground;
+            var config = SharedConfig.readMing();
+            var saved = config.currentBackground;
+            var isVideo = config.isVideo;
             var url = saved || (this.defaultBackgrounds.length > 3 ? this.defaultBackgrounds[3].url : null);
             if (url) {
-                this.selectBackground(url);
+                this.selectBackground(url, isVideo);
             }
         },
 
@@ -298,41 +310,74 @@
         },
 
         /** 选择背景 */
-        selectBackground: function (url) {
+        selectBackground: function (url, isVideo) {
             this.currentBackground = url;
-            // 应用到鸣潮预览区背景（通过 image-association-old 全屏显示）
-            var imgAssoc = document.getElementById('image-association-old');
-            if (imgAssoc) {
-                var img = imgAssoc.querySelector('img');
-                if (img) {
-                    img.src = url;
+            
+            // 判断是否为视频文件
+            var videoEl = document.getElementById('background-video');
+            var previewBg = document.getElementById('preview-background');
+            
+            if (isVideo || (url && (url.match(/\.(mp4|webm|ogg)$/i) || url.startsWith('data:video')))) {
+                // 视频背景处理
+                if (videoEl) {
+                    videoEl.src = url;
+                    videoEl.style.display = 'block';
+                    videoEl.style.width = '100%';
+                    videoEl.style.height = '100%';
+                    videoEl.style.objectFit = 'cover';
+                    videoEl.style.zIndex = '2';
+                    videoEl.play().catch(function(e) { console.log('视频自动播放失败:', e); });
+                }
+                // 清除 preview-background 的背景图
+                if (previewBg) {
+                    previewBg.style.backgroundImage = '';
+                }
+                // 视频模式下降低mc UI层的遮挡
+                var mingUi = document.getElementById('image-association-ming-ui');
+                if (mingUi) {
+                    mingUi.style.opacity = '0.3';  // 降低透明度，让视频可见
+                }
+            } else {
+                // 图片背景处理
+                if (videoEl) {
+                    videoEl.style.display = 'none';
+                    videoEl.src = '';
+                }
+                
+                // 应用到 preview-background 全屏显示
+                if (previewBg) {
+                    previewBg.style.backgroundImage = 'url(' + url + ')';
+                    previewBg.style.backgroundSize = 'cover';
+                    previewBg.style.backgroundPosition = 'center';
+                }
+                
+                // 图片模式下恢复mc UI层的不透明度
+                var mingUi = document.getElementById('image-association-ming-ui');
+                if (mingUi) {
+                    mingUi.style.opacity = '1';
                 }
             }
-            // 同时更新 preview-background（保持向后兼容，防止导出时缺失）
-            var previewBg = document.getElementById('preview-background');
-            if (previewBg) {
-                previewBg.style.backgroundImage = 'url(' + url + ')';
-                previewBg.style.backgroundSize = 'cover';
-                previewBg.style.backgroundPosition = 'center';
-            }
+            
             // 保存到共享配置
-            SharedConfig.write({ currentBackground: url });
+            SharedConfig.write({ currentBackground: url, isVideo: !!isVideo });
         },
 
         /** 导入自定义背景 */
         importBackground: function (file) {
             var self = this;
+            var isVideo = file.type.startsWith('video/');
             var reader = new FileReader();
             reader.onload = function (e) {
                 var url = e.target.result;
                 var newBg = {
                     id: 'custom_' + Date.now(),
                     name: file.name,
-                    url: url
+                    url: url,
+                    isVideo: isVideo
                 };
                 self.defaultBackgrounds.push(newBg);
                 self.renderBackgroundList();
-                self.selectBackground(url);
+                self.selectBackground(url, isVideo);
             };
             reader.readAsDataURL(file);
         },
@@ -368,12 +413,16 @@
             if (previewBg) {
                 previewBg.style.backgroundImage = '';
             }
-            var imgAssoc = document.getElementById('image-association-old');
-            if (imgAssoc) {
-                var img = imgAssoc.querySelector('img');
-                if (img) {
-                    img.src = 'backgrounds/mc UI.png';
-                }
+            // 重置视频元素
+            var videoEl = document.getElementById('background-video');
+            if (videoEl) {
+                videoEl.style.display = 'none';
+                videoEl.src = '';
+            }
+            // 重置mc UI层的不透明度
+            var mingUi = document.getElementById('image-association-ming-ui');
+            if (mingUi) {
+                mingUi.style.opacity = '1';
             }
         }
     };
@@ -1534,6 +1583,14 @@
             'export-gif-btn-right',
             'export-gif-fast-btn-right'
         ];
+        
+        // 隐藏视频设置面板（鸣潮模式下不需要）
+        var videoSettingsSection = document.getElementById('video-settings-section');
+        var subtitleBatchSection = document.getElementById('subtitle-batch-edit-section');
+        var videoProgressBar = document.getElementById('video-progress-bar');
+        if (videoSettingsSection) videoSettingsSection.style.display = 'none';
+        if (subtitleBatchSection) subtitleBatchSection.style.display = 'none';
+        if (videoProgressBar) videoProgressBar.style.display = 'none';
 
         var switchLabelOld = document.getElementById('switch-label-old');
         var switchLabelNew = document.getElementById('switch-label-new');
@@ -1599,6 +1656,11 @@
                     if (commanderText) commanderText.focus();
                 }
             }
+            
+            // 更新视频控制面板为鸣潮模式设置
+            if (typeof VideoBgManager !== 'undefined' && VideoBgManager.updateControlPanelForMode) {
+                VideoBgManager.updateControlPanelForMode();
+            }
         } else {
             // 先保存鸣潮输入框值
             saveMingInputValues();
@@ -1631,6 +1693,11 @@
                     commanderDialog.style.display = 'flex';
                     if (commanderText) commanderText.focus();
                 }
+            }
+            
+            // 更新视频控制面板为战双模式设置
+            if (typeof VideoBgManager !== 'undefined' && VideoBgManager.updateControlPanelForMode) {
+                VideoBgManager.updateControlPanelForMode();
             }
         }
     }

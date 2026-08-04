@@ -189,7 +189,6 @@
 .ming-mode-root.ming-active #preview-container.feixun-mode .commander-dialog,
 .ming-mode-root.ming-active #preview-container.feixun-mode .ui-tile-layer,
 .ming-mode-root.ming-active #preview-container.feixun-mode .bottom-gradient,
-.ming-mode-root.ming-active #preview-container.feixun-mode .image-association-old,
 .ming-mode-root.ming-active #preview-container.feixun-mode .image-association-ming-ui,
 .ming-mode-root.ming-active #preview-container.feixun-mode .image-association-center {
     display: none !important;
@@ -200,36 +199,28 @@
     display: none !important;
 }
 
-/* ===== 鸣潮剧情模式：图片关联层全屏覆盖 ===== */
-.ming-mode-root.ming-active #image-association-old {
+/* 鸣潮剧情模式下视频背景层级调整 */
+.ming-mode-root.ming-active #background-video {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 1000;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    /* 新增：确保该元素自身创建新的层叠上下文，避免被父元素影响 */
-    isolation: isolate;
-}
-
-.ming-mode-root.ming-active #image-association-old img {
     width: 100%;
     height: 100%;
-    max-width: none;
-    max-height: none;
     object-fit: cover;
+    z-index: 2;
+}
+
+/* 鸣潮剧情模式下预览背景层级 */
+.ming-mode-root.ming-active #preview-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
 }
 
 /* ===== 鸣潮剧情模式：mc UI 全屏图片关联层（始终显示 mc UI.png，位于背景之上，不被遮盖） ===== */
-/* 该层独立于 #image-association-old，不会被 selectBackground 替换图片源 */
 .ming-mode-root.ming-active #image-association-ming-ui {
     position: absolute;
     top: 0;
@@ -238,7 +229,7 @@
     bottom: 0;
     width: 100% !important;
     height: 100% !important;
-    z-index: 1001;  /* 高于 #image-association-old (z-index: 1000)，确保不被选中/导入的背景图片遮盖 */
+    z-index: 3;  /* 高于背景和视频的层级，确保UI显示在最上层 */
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -369,7 +360,6 @@ body:not(.ming-active) .ming-story-only {
 .ming-mode-root #preview-container.feixun-mode .preview-background,
 .ming-mode-root #preview-container.feixun-mode .ui-tile-layer,
 .ming-mode-root #preview-container.feixun-mode .bottom-gradient,
-.ming-mode-root #preview-container.feixun-mode .image-association-old,
 .ming-mode-root #preview-container.feixun-mode .image-association-ming-ui,
 .ming-mode-root #preview-container.feixun-mode .image-association-center,
 .ming-mode-root #preview-container.feixun-mode .character-layer,
@@ -421,6 +411,31 @@ body:not(.ming-active) .ming-story-only {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+}
+
+/* 联系人列表背景图片关联区（与列表同宽同高） */
+.ming-mode-root .feixun-contact-list-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.ming-mode-root .feixun-contact-list-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 联系人列表头部（在背景之上） */
+.ming-mode-root .feixun-header {
+    position: relative;
+    z-index: 1;
 }
 
 /* 联系人列表区域 */
@@ -429,6 +444,8 @@ body:not(.ming-active) .ming-story-only {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 8px 0;
+    position: relative;
+    z-index: 1;
 }
 
 .ming-mode-root .feixun-contacts-scroll::-webkit-scrollbar {
@@ -701,7 +718,7 @@ body:not(.ming-active) .ming-story-only {
     padding: 2px 6px;
     font-size: 12px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgb(134, 134, 134);
     display: inline-block;
     min-width: 60px;
 }

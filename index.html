@@ -187,10 +187,6 @@
                         <video id="background-video" class="background-video" muted playsinline style="display:none;"></video>
                     </div>
 
-                    <div id="image-association-old" class="image-association image-association-old" style="position: absolute; top: 25px; right: 35px; z-index: 10; width: 210px; height: 40px; background-color: rgba(0, 0, 0, 0); border: 0px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
-                        <img src="backgrounds/UI.png" alt="图片关联" class="association-image" style="max-width: 250%; max-height: 250%; object-fit: contain;">
-                    </div>
-
                     <!-- 鸣潮剧情模式：mc UI 全屏图片关联层（始终显示 mc UI.png，z-index 高于背景，不被选中/导入的背景遮盖） -->
                     <div id="image-association-ming-ui" class="image-association image-association-ming-ui" style="position: absolute; top: 0px; right: 30px; z-index: 10; width: 210px; height: 40px; background-color: rgba(0, 0, 0, 0); border: 0px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
                         <img src="backgrounds/mc UI.png" alt="图片关联" class="association-image" style="max-width: 220%; max-height: 220%; object-fit: contain;">
@@ -380,6 +376,14 @@
                             <button id="dialog-size-increase-compact" class="format-btn" title="增大字号">A+</button>
                         </div>
                     </div>
+                    <div class="subsection">
+                        <label class="subsection-label">文本对齐:</label>
+                        <div class="format-buttons">
+                            <button id="dialog-align-left" class="format-btn align-btn active" title="左对齐" data-align="left">◀</button>
+                            <button id="dialog-align-center" class="format-btn align-btn" title="居中对齐" data-align="center">◆</button>
+                            <button id="dialog-align-right" class="format-btn align-btn" title="右对齐" data-align="right">▶</button>
+                        </div>
+                    </div>
                     <!-- 接下来的文本格式 -->
                     <div class="subsection">
                         <label class="subsection-label">接下来的文本格式:</label>
@@ -405,6 +409,14 @@
                         <div class="format-buttons">
                             <button id="commander-size-decrease-compact" class="format-btn" title="减小字号">A-</button>
                             <button id="commander-size-increase-compact" class="format-btn" title="增大字号">A+</button>
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <label class="subsection-label">指挥官文本对齐:</label>
+                        <div class="format-buttons">
+                            <button id="commander-align-left" class="format-btn align-btn active" title="左对齐" data-align="left">◀</button>
+                            <button id="commander-align-center" class="format-btn align-btn" title="居中对齐" data-align="center">◆</button>
+                            <button id="commander-align-right" class="format-btn align-btn" title="右对齐" data-align="right">▶</button>
                         </div>
                     </div>
                     <!-- 指挥官设置 -->

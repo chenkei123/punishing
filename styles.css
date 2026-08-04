@@ -1483,6 +1483,22 @@ body:not(.ming-active) #preview-container.preview-mode-old #image-association-ol
     font-weight: bold;
 }
 
+/* 对齐按钮样式 */
+.align-btn {
+    font-size: 14px;
+    padding: 6px 10px;
+    min-width: 36px;
+}
+
+.align-btn:hover {
+    background: #3d3d5c;
+}
+
+.align-btn.active {
+    background: #667eea !important;
+    color: white !important;
+}
+
 /* 导出弹窗关闭按钮样式 */
 .modal-close-cross {
     position: absolute;
