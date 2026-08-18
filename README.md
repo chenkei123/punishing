@@ -28,6 +28,7 @@ $\color{red}{\textsf{声明：本网站为非官方二创网站，作品请注�
 右侧面板：角色设置、动画设置、更多设置、字幕/视频设置、导出/导航/撤回按钮组。
 
 顶部：声明栏；左右两侧有折叠按钮（◀ / ▶）可收起面板。
+
 <img width="720" height="347" alt="image" src="https://github.com/user-attachments/assets/02748e4e-75e5-427c-ab86-1ba53a8467b0" />
 
 [配图：主应用三栏布局]
@@ -46,6 +47,7 @@ Ctrl + Enter	下一句（提交当前对话）
 ← / →	        切换上一个/下一个场景
 
 2.战双模式功能详解
+
 <img width="720" height="347" alt="image" src="https://github.com/user-attachments/assets/0c2e61fe-a934-4b14-886d-d5b0f562c3c2" />
 
 [配图：战双模式编辑页面]
@@ -65,6 +67,7 @@ Ctrl + Enter	下一句（提交当前对话）
 功能搜索
 
 在「搜索功能」框输入关键词，可定位界面上的对应功能按钮。
+
 <img width="246" height="45" alt="image" src="https://github.com/user-attachments/assets/5159eb38-10a7-481d-b469-849fc40dc236" />
 
 
@@ -85,6 +88,7 @@ Ctrl + Enter	下一句（提交当前对话）
 打字机动画：开关。开关默认关闭，开启后对话文字逐字出现，动画对png格式无效
 
 动画速度：10–200ms（默认50ms），数值越小打字机的动画越快，gif的长度越短。
+
 <img width="267" height="195" alt="image" src="https://github.com/user-attachments/assets/c5ab47f2-2e3d-4234-8887-cc0353c05b1a" />
 
 
@@ -101,7 +105,9 @@ $\color{red}{\textsf{注意：出现问题时，如果导出日志功能能够�
 「指挥官对话」按钮：显/隐藏指挥官对话框（用于输入指挥官台词）。
 
 点击「指挥官对话」按钮后会在编辑区出现图中右侧的白色文本输入框，对应剧情中首席的文本显示框
+
 <img width="261" height="111" alt="image" src="https://github.com/user-attachments/assets/bb42cd79-dd43-4750-9e29-b5e19bdb0f5b" />
+
 <img width="720" height="410" alt="image" src="https://github.com/user-attachments/assets/5515a9fe-2554-4b1a-b309-6c960549a524" />
 
 导出按钮组
@@ -117,6 +123,7 @@ $\color{red}{\textsf{注意：出现问题时，如果导出日志功能能够�
 快速导出GIF	快速导出GIF（跳过部分预处理，同时对设备性能要求较小）
 
 导出MP4视频	把场景序列导出为MP4
+
 <img width="264" height="308" alt="image" src="https://github.com/user-attachments/assets/f94bd2b4-f416-4b27-8275-5d4088a5d5d0" />
 
        
@@ -139,6 +146,7 @@ $\color{red}{\textsf{注意：出现问题时，如果导出日志功能能够�
 查看暂存	打开已暂存场景历史窗口
 
 保存修改	在载入暂存并修改后，点此保存
+
 <img width="388" height="288" alt="image" src="https://github.com/user-attachments/assets/a74cccde-4c58-4c5e-b6d3-67e18852ac01" />
 
 2.2 右侧面板
@@ -178,6 +186,7 @@ MP4 质量	1(低)–10(高)（推荐 5）
 指挥官文本颜色 / 大小 / 对齐	单独设置指挥官对话文字样式
 
 工程数据 (JSON)	导出 / 导入当前工程（场景、暂存、列表与设置）
+
 <img width="270" height="393" alt="image" src="https://github.com/user-attachments/assets/7a573fdd-a6d7-48ab-9546-04a826542614" />
 
 <img width="219" height="390" alt="image" src="https://github.com/user-attachments/assets/893382a5-46e3-40a1-9d6b-089dff45baac" />
@@ -190,7 +199,9 @@ MP4 质量	1(低)–10(高)（推荐 5）
 仅当背景为视频时出现：可批量编辑字幕段、调整视频显示参数。
 
 $\color{red}{\textsf{注：为了防止在导入或者导出的过程中一些设备出现导出失败、明显卡顿或者卡死的问题，目前支持导入大小＜200mb、时长＜5min的视频。}}$
+
 <img width="165" height="323" alt="image" src="https://github.com/user-attachments/assets/be5b24cd-bd8a-46d1-8c27-c7f6fc8d2dad" />
+
 <img width="269" height="317" alt="image" src="https://github.com/user-attachments/assets/19b3e3a3-0436-4d7b-a9b4-3202ff595177" />
 
 
@@ -205,6 +216,7 @@ $\color{red}{\textsf{注：为了防止在导入或者导出的过程中一些�
 与左侧对应按钮功能一致。
 
 2.3 中间预览区
+
 <img width="720" height="407" alt="image" src="https://github.com/user-attachments/assets/9f9c50d6-dd64-4558-a911-cbdc1323ae6d" />
 
 <img width="720" height="404" alt="image" src="https://github.com/user-attachments/assets/c51940a4-957a-4ac4-9adb-f293a6f2c287" />
