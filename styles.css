@@ -101,7 +101,7 @@ body {
     z-index: 2;
 }
 
-/* 引导箭头通用样式 */
+/* 引导箭头通用样式（Uiverse.io Nawsome V 形箭头风格） */
 .slide-arrow {
     position: absolute;
     top: 50%;
@@ -109,26 +109,13 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
     z-index: 10;
-    color: rgba(255, 255, 255, 0.85);
-    transition: all 0.3s ease;
+    background: transparent;
+    padding: 0;
     user-select: none;
     -webkit-user-select: none;
-    padding: 16px 10px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(4px);
-}
-
-.slide-arrow:hover {
-    color: #fff;
-    background: rgba(0, 0, 0, 0.45);
-}
-
-.slide-arrow:active {
-    transform: translateY(-50%) scale(0.92);
 }
 
 /* 右侧箭头（战双页面 → 右滑进入鸣潮） */
@@ -141,39 +128,93 @@ body {
     left: 20px;
 }
 
-/* 箭头图标 */
-.slide-arrow .arrow-icon {
-    font-size: 28px;
-    line-height: 1;
-    animation: arrow-pulse-horizontal 1.8s ease-in-out infinite;
+/* V 形箭头本体 */
+.slide-arrow .arrow {
+    position: relative;
+    cursor: pointer;
+    height: 60px;
+    width: 50px;
+    transition: transform 0.1s;
 }
 
-/* 右箭头脉冲动画（向右提示） */
-.slide-arrow-right .arrow-icon {
-    animation-name: arrow-pulse-right;
+/* 左箭头：整体镜像朝左 */
+.slide-arrow-left .arrow {
+    transform: scaleX(-1);
 }
 
-/* 左箭头脉冲动画（向左提示） */
-.slide-arrow-left .arrow-icon {
-    animation-name: arrow-pulse-left;
+.slide-arrow:active .arrow {
+    transform: scale(0.9);
 }
 
-@keyframes arrow-pulse-right {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(6px); opacity: 1; }
+.slide-arrow-left:active .arrow {
+    transform: scaleX(-1) scale(0.9);
 }
 
-@keyframes arrow-pulse-left {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(-6px); opacity: 1; }
+.slide-arrow .arrow-top,
+.slide-arrow .arrow-bottom {
+    background-color: #666;
+    height: 4px;
+    left: -5px;
+    position: absolute;
+    top: 50%;
+    width: 100%;
 }
 
-/* 箭头文字 */
-.slide-arrow .arrow-text {
+.slide-arrow .arrow-top:after,
+.slide-arrow .arrow-bottom:after {
+    background-color: #fff;
+    content: "";
+    height: 100%;
+    position: absolute;
+    top: 0;
+    transition: all 0.15s;
+}
+
+.slide-arrow .arrow-top {
+    transform: rotate(45deg);
+    transform-origin: bottom right;
+}
+
+.slide-arrow .arrow-top:after {
+    left: 100%;
+    right: 0;
+    transition-delay: 0s;
+}
+
+.slide-arrow .arrow-bottom {
+    transform: rotate(-45deg);
+    transform-origin: top right;
+}
+
+.slide-arrow .arrow-bottom:after {
+    left: 0;
+    right: 100%;
+    transition-delay: 0.15s;
+}
+
+.slide-arrow:hover .arrow-top:after {
+    left: 0;
+    transition-delay: 0.15s;
+}
+
+.slide-arrow:hover .arrow-bottom:after {
+    right: 0;
+    transition-delay: 0s;
+}
+
+/* 箭头下方文字标签 */
+.slide-arrow .arrow-label {
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.85);
     white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    transition: color 0.2s ease;
+}
+
+.slide-arrow:hover .arrow-label {
+    color: #fff;
 }
 
 /* 主应用页面 */
@@ -242,7 +283,7 @@ body {
     text-align: center;
 }
 
-/* 滑动指引 */
+/* 滑动指引（无色透明背景 + 弹跳下箭头） */
 .scroll-indicator {
     position: absolute;
     bottom: 40px;
@@ -251,27 +292,33 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
     z-index: 2;
     color: #fff;
     font-size: 14px;
-    opacity: 0.8;
+    background: transparent;
+    cursor: default;
 }
 
-.scroll-indicator .arrow {
-    display: block;
-    width: 0;
-    height: 0;
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-top: 12px solid #fff;
-    margin-bottom: 6px;
-    animation: arrow-bounce 1.5s infinite;
+.scroll-indicator .scroll-arrow-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: scroll-arrow-bounce 1s infinite;
 }
 
-@keyframes arrow-bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); }
-    40% { transform: translateX(-50%) rotate(45deg) translateY(8px); }
-    60% { transform: translateX(-50%) rotate(45deg) translateY(4px); }
+.scroll-indicator:hover .scroll-arrow-icon {
+    animation: none;
+}
+
+@keyframes scroll-arrow-bounce {
+    0%, 100% {
+        transform: translateY(-25%);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+        transform: none;
+        animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
 }
 
 /* 应用容器 */

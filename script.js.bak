@@ -6841,26 +6841,7 @@ function performFilteredExport() {
     
     // 根据打字机动画开关决定导出格式
     // 开启打字机动画 -> 导出GIF，未开启 -> 导出PNG
-    // 底栏「全部导出」按钮会通过 window.__bebAllFormat 指定格式（用完即清，旧按钮行为不变）
-    var _bebAllFormat = window.__bebAllFormat;
-    window.__bebAllFormat = null;
-    const exportFormat =
-        (_bebAllFormat === 'png' || _bebAllFormat === 'gif' || _bebAllFormat === 'mp4')
-            ? _bebAllFormat
-            : (state.animationEnabled ? 'gif' : 'png');
-
-    // 仅当格式来自底栏「全部导出」时，GIF/MP4 走逐幕串行导出（复用成熟单幕 exportGIF/exportMP4，
-    // 避开预览弹窗旧 MP4 分支的黑屏问题）；旧按钮（_bebAllFormat 为空）行为与改动前完全一致
-    if (_bebAllFormat === 'gif' && typeof window.__bebExportScenesAsGifSeries === 'function') {
-        window.__bebExportScenesAsGifSeries(tempScenes);
-        closeExportPreviewModal();
-        return;
-    }
-    if (_bebAllFormat === 'mp4' && typeof window.__bebExportScenesAsMp4Series === 'function') {
-        window.__bebExportScenesAsMp4Series(tempScenes);
-        closeExportPreviewModal();
-        return;
-    }
+    const exportFormat = state.animationEnabled ? 'gif' : 'png';
     
     // 使用临时数组执行导出
     const originalScenes = [...state.savedScenes]; // 保存原始数据
@@ -6906,10 +6887,7 @@ async function exportMultipleAsGif(scenesArray) {
         quality: state.gifQuality || 1,
         width: state.exportResolution || 1920,
         height: Math.round((state.exportResolution || 1920) * 9 / 16),
-        // 本地 vendor worker（与单幕导出同源，离线可用）；此前引用 CDN，离线/断网时 Worker 无法加载
-        workerScript: (typeof getGifWorkerBlobUrl === 'function')
-            ? await getGifWorkerBlobUrl()
-            : 'vendor/gif.worker.js'
+        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
     });
 
     showExportProgress('导出GIF中', true);

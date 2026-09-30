@@ -569,20 +569,9 @@
                 item.dataset.index = index;
 
                 var currentDlg = contact.dialogues[self.currentDialogueIndex] || contact.dialogues[0];
-                var previewText = '';
-                if (currentDlg && currentDlg.messages.length > 0) {
-                    previewText = currentDlg.messages[currentDlg.messages.length - 1].text.substring(0, 20) + '...';
-                } else {
-                    // 当前对话没有消息时，回退显示该联系人最近一个有消息的对话的最后一条；
-                    // 所有对话都没有消息时，预览行保持空白（不显示「暂无消息」字样）
-                    for (var _di = contact.dialogues.length - 1; _di >= 0; _di--) {
-                        var _dlg = contact.dialogues[_di];
-                        if (_dlg && _dlg.messages && _dlg.messages.length > 0) {
-                            previewText = _dlg.messages[_dlg.messages.length - 1].text.substring(0, 20) + '...';
-                            break;
-                        }
-                    }
-                }
+                var previewText = (currentDlg && currentDlg.messages.length > 0)
+                    ? currentDlg.messages[currentDlg.messages.length - 1].text.substring(0, 20) + '...'
+                    : '暂无消息';
 
                 var avatarHtml = contact.avatar
                     ? '<img src="' + contact.avatar + '" alt="' + contact.name + '">'
@@ -600,7 +589,7 @@
                     '<div class="feixun-contact-avatar">' + avatarHtml + '</div>' +
                     '<div class="feixun-contact-info">' +
                         '<div class="feixun-contact-name">' + contact.name + '</div>' +
-                        '<div class="feixun-contact-preview">' + (previewText || '&nbsp;') + '</div>' +
+                        '<div class="feixun-contact-preview">' + previewText + '</div>' +
                     '</div>' +
                     '<div class="feixun-contact-arrow">▼</div>';
 

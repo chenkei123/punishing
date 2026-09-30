@@ -6,9 +6,9 @@
     <title>战双帕弥什剧情二创网站</title>
     <link rel="stylesheet" href="styles.css">
     <!-- 鸣潮模式独立样式（核心共享 + 模式独立 + 轻量通信） -->
-    <link rel="stylesheet" href="ming-mode/ming.css?v=20260930b">
+    <link rel="stylesheet" href="ming-mode/ming.css">
     <!-- 新手教程手册 / 剧本自动化 / 分镜编辑 附加样式 -->
-    <link rel="stylesheet" href="extras.css?v=20260930">
+    <link rel="stylesheet" href="extras.css?v=20260903c">
 <script src="vendor/html2canvas.min.js?v=20260823" defer></script>
 	<script src="vendor/gif.js?v=20260823" defer></script>
 	<script src="vendor/jszip.min.js?v=20260823" defer></script>
@@ -604,34 +604,6 @@
             </div>
 	        </div>
 
-        <!-- 底栏导出：格式选择弹窗（逻辑见 bottom-export-bar.js；若此 DOM 缺失该脚本会自行补建） -->
-        <div id="beb-format-modal" class="modal" style="display:none;">
-            <div class="modal-content beb-modal-content">
-                <span class="beb-modal-close" id="beb-modal-close" title="关闭">×</span>
-                <h3 id="beb-modal-title">选择导出格式</h3>
-                <p id="beb-modal-subtitle" class="beb-subtitle"></p>
-                <p id="beb-modal-meta" class="beb-meta"></p>
-                <div class="beb-format-grid">
-                    <button type="button" class="beb-card" data-format="png">
-                        <span class="beb-card-title">PNG</span>
-                        <span class="beb-card-desc">静态图 · 单帧</span>
-                    </button>
-                    <button type="button" class="beb-card" data-format="gif" data-need-anim="1">
-                        <span class="beb-card-title">GIF</span>
-                        <span class="beb-card-desc">动画图 · 打字机效果</span>
-                    </button>
-                    <button type="button" class="beb-card" data-format="mp4" data-need-anim="1">
-                        <span class="beb-card-title">MP4</span>
-                        <span class="beb-card-desc">视频 · 打字机效果</span>
-                    </button>
-                </div>
-                <p class="beb-gate-tip" id="beb-gate-tip">GIF / MP4 需先在「动画设置」中开启打字机动画</p>
-                <div class="modal-footer">
-                    <button type="button" id="beb-cancel-btn" class="btn btn-secondary">取消</button>
-                </div>
-            </div>
-        </div>
-
         <!-- 新手教程手册弹窗（内容由 tutorial.js 动态构建） -->
         <div id="help-modal" class="modal" style="display:none;"></div>
 
@@ -654,9 +626,7 @@
 
     <script src="script.js?v=20260823b"></script>
     <!-- 鸣潮模式独立模块（IIFE 封装，核心共享 + 模式独立 + 轻量通信；defer 非阻塞） -->
-    <script src="ming-mode/ming.js?v=20260930b" defer></script>
-    <!-- 底部「导出 / 全部导出」格式选择（defer，在 ming.js 之后加载以接管动态注入的导航栏） -->
-    <script src="bottom-export-bar.js?v=20260929" defer></script>
+    <script src="ming-mode/ming.js?v=20260823" defer></script>
     <!-- 部署信息 / 更新角标 / 网格缩略图加载 -->
     <script src="deploy.js?v=20260822"></script>
     <script src="progressive-img.js?v=20260822"></script>
