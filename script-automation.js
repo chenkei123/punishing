@@ -358,6 +358,11 @@
                         } else if (cmd.op === 'anim') {
                             setTypewriter(cmd.on, log);
                         } else if (cmd.op === 'export') {
+                            if (cmd.fmt === 'gif' && !state.animationEnabled) {
+                                // GIF 依赖打字机动画：未开启时点「全部导出」将无法导出，此处先提醒
+                                log('打字机动画未开启，无法导出GIF：请先打开打字机动画（可在「动画设置」中开启，或使用「打开打字机动画」指令）', 'warn');
+                                showToast('打字机动画未开启，无法导出GIF。请先打开打字机动画后再全部导出。', 'warn');
+                            }
                             run.exportPreset = cmd.fmt;
                             log('导出预设：' + (cmd.fmt === 'auto' ? '自动（开打字机动画→GIF，否则→PNG）' : cmd.fmt.toUpperCase()));
                         }
@@ -698,8 +703,9 @@
             '  <button class="btn btn-success sb-save">保存修改</button>' +
             '  <button class="btn btn-danger sb-del">删除此帧</button>' +
             '  <button class="btn btn-primary sb-export-btn">全部导出</button>' +
+            '  <button class="btn btn-success sb-merge-export-btn" title="将全部暂存画面按顺序整合成一个MP4视频导出">整合导出</button>' +
             '</div>' +
-            '<div class="sb-hint">「保存修改」写回该帧暂存数据（左侧缩略图随之刷新）；「编辑区查看效果」把该帧载入主编辑区看大图效果，此时左侧面板会出现「↩ 返回分镜编辑」，点它回到本窗口（编辑区里的改动会自动写回该帧）；「全部导出」按上方显示的格式导出全部暂存画面。</div>';
+            '<div class="sb-hint">「保存修改」写回该帧暂存数据（左侧缩略图随之刷新）；「编辑区查看效果」把该帧载入主编辑区看大图效果，此时左侧面板会出现「↩ 返回分镜编辑」，点它回到本窗口（编辑区里的改动会自动写回该帧）；「全部导出」按上方显示的格式导出全部暂存画面（每个画面一个文件）；「整合导出」将全部暂存画面按顺序整合成一个MP4视频导出。</div>';
 
         editor.querySelector('.sb-name').value = d.character || '';
         editor.querySelector('.sb-text').value = d.text || '';
@@ -725,6 +731,7 @@
         editor.querySelector('.sb-save').addEventListener('click', function () { saveCurrentFrame(false); });
         editor.querySelector('.sb-del').addEventListener('click', deleteCurrentFrame);
         editor.querySelector('.sb-export-btn').addEventListener('click', exportAllFromStoryboard);
+        editor.querySelector('.sb-merge-export-btn').addEventListener('click', exportMergedFromStoryboard);
     }
 
     // silent=true：静默写回（不弹「已保存」、不重绘列表），用于切到编辑区前的兜底保存
@@ -804,10 +811,31 @@
         }
         var fmt = sb.preset && sb.preset !== 'auto' ? sb.preset
             : (state.animationEnabled ? 'gif' : 'png');
+        // GIF 依赖打字机动画：未开启时无法导出，给出提醒（不影响 PNG / MP4 导出）
+        if (fmt === 'gif' && !state.animationEnabled) {
+            showToast('无法导出GIF：打字机动画未开启。请先在「动画设置」中打开打字机动画（或使用「打开打字机动画」指令）后重试。', 'error');
+            return;
+        }
         document.getElementById('storyboard-modal').style.display = 'none';
         Promise.resolve()
             .then(function () { return exportSelectedScenes(state.savedScenes.slice(), fmt); })
             .catch(function (e) { showToast('导出失败：' + (e && e.message ? e.message : e), 'error'); });
+    }
+
+    // 整合导出：把全部暂存画面按顺序整合成一个 MP4 视频（由 script.js 的 exportMergedMp4FromScenes 实现）
+    function exportMergedFromStoryboard() {
+        if (typeof exportMergedMp4FromScenes !== 'function') {
+            showToast('整合导出模块未加载，请刷新页面后重试。', 'warn');
+            return;
+        }
+        if (!state.savedScenes.length) {
+            showToast('没有可导出的画面。', 'warn');
+            return;
+        }
+        document.getElementById('storyboard-modal').style.display = 'none';
+        Promise.resolve()
+            .then(function () { return exportMergedMp4FromScenes(state.savedScenes.slice()); })
+            .catch(function (e) { showToast('整合导出失败：' + (e && e.message ? e.message : e), 'error'); });
     }
 
     // ==================== 编辑区查看效果 ↔ 返回分镜编辑 ====================

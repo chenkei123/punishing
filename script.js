@@ -5758,7 +5758,7 @@ function checkMP4Support() {
 }
 
 // 导出为MP4 - 使用Canvas录制方式
-async function exportMP4(sceneIndex = state.currentSceneIndex, filename = null, silentMode = false) {
+async function exportMP4(sceneIndex = state.currentSceneIndex, filename = null, silentMode = false, sharedExport = null) {
     if (state.scenes.length === 0) {
         if (!silentMode) showToast('没有可导出的场景', 'warn');
         return;
@@ -5821,26 +5821,37 @@ async function exportMP4(sceneIndex = state.currentSceneIndex, filename = null, 
 
         // 使用html2canvas + MediaRecorder方式
         const fps = 30;
-        const recordedChunks = [];
-        
-        // 创建一个临时canvas用于录制
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // 设置MediaRecorder
-        const stream = canvas.captureStream(fps);
-        const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: support.mimeType,
-            videoBitsPerSecond: state.exportMp4Quality * 1000000 // 1-10 Mbps
-        });
-        
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) {
-                recordedChunks.push(e.data);
-            }
-        };
+        // 整合导出模式：复用调用方传入的共享录制器，多个画面连续录入同一条流
+        const shared = (sharedExport && sharedExport.mediaRecorder) ? sharedExport : null;
+        let recordedChunks, canvas, ctx, stream, mediaRecorder;
+        if (shared) {
+            recordedChunks = shared.chunks;
+            canvas = shared.canvas;
+            ctx = shared.ctx;
+            stream = shared.stream;
+            mediaRecorder = shared.mediaRecorder;
+        } else {
+            recordedChunks = [];
+
+            // 创建一个临时canvas用于录制
+            canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            ctx = canvas.getContext('2d');
+
+            // 设置MediaRecorder
+            stream = canvas.captureStream(fps);
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: support.mimeType,
+                videoBitsPerSecond: state.exportMp4Quality * 1000000 // 1-10 Mbps
+            });
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    recordedChunks.push(e.data);
+                }
+            };
+        }
         
         // 计算scale
         const containerWidth = elements.previewContainer.offsetWidth;
@@ -5861,8 +5872,8 @@ async function exportMP4(sceneIndex = state.currentSceneIndex, filename = null, 
         let frameCount = 0;
         const totalFrames = hasCommanderDialog ? 21 : (state.animationEnabled ? text.length + 6 : 6);
         
-        // 开始录制
-        mediaRecorder.start(100); // 每100ms收集一次数据
+        // 开始录制（整合导出模式下由调用方统一开始/结束，这里不重复 start）
+        if (!shared) mediaRecorder.start(100); // 每100ms收集一次数据
         
         // 辅助函数：捕获一帧并绘制到录制canvas
         async function captureFrame() {
@@ -5952,20 +5963,23 @@ async function exportMP4(sceneIndex = state.currentSceneIndex, filename = null, 
             }
         }
         
-        // 停止录制
-        mediaRecorder.stop();
-        
-        // 等待录制完成
-        await new Promise((resolve) => {
-            mediaRecorder.onstop = resolve;
-        });
-
         // 恢复原始状态
         restoreName();
         elements.dialogInput.value = originalText;
         elements.commanderDialog.style.display = originalCommanderDisplay;
         elements.commanderDialog.style.transform = originalCommanderTransform;
         elements.commanderDialog.style.opacity = originalCommanderOpacity;
+
+        // 整合导出模式：录制由调用方统一结束与下载，这里不停录、不下载
+        if (shared) return;
+
+        // 停止录制
+        mediaRecorder.stop();
+
+        // 等待录制完成
+        await new Promise((resolve) => {
+            mediaRecorder.onstop = resolve;
+        });
 
         if (!isInternalCall) updateExportProgress(80, '正在生成MP4文件...');
         
@@ -6894,266 +6908,225 @@ async function exportSelectedScenes(scenesToExport, format) {
     }
 }
 
-// 修改现有的导出函数以接受特定场景数组
+// 逐幕串行导出（GIF / MP4）：复用成熟的单幕 exportGIF / exportMP4，
+// 每个场景生成一个独立文件，与「全部导出」PNG 路径及底部导出栏行为一致。
+async function exportScenesSeries(scenesArray, kind) {
+    if (!scenesArray || scenesArray.length === 0) {
+        showToast('没有可导出的场景', 'warn');
+        return;
+    }
+
+    // MP4：浏览器不支持任何可录制格式时直接提示（单幕 exportMP4 在静默模式下不弹提示）
+    let ext = 'mp4';
+    if (kind === 'mp4') {
+        const support = checkMP4Support();
+        if (!support.supported) {
+            showToast('导出MP4失败：' + support.reason + '\n\n请使用最新版Chrome、Edge或Firefox浏览器。', 'error');
+            return;
+        }
+        ext = support.mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+    }
+
+    // 完整保存现场（restoreState 只还原 scenes/currentSceneIndex，输入框内容需单独还原）
+    const originalScenes = JSON.parse(JSON.stringify(state.scenes));
+    const originalSceneIndex = state.currentSceneIndex;
+    let originalDialogValue = '';
+    try { originalDialogValue = elements.dialogInput.value; } catch (e) { /* ignore */ }
+
+    // 标记批量导出：进度弹窗的取消按钮仅在 isExportAll 时生效
+    state.isExportAll = true;
+    state.shouldCancelExport = false;
+    state.exportAllProgress = { current: 0, total: scenesArray.length, failed: 0 };
+
+    showExportProgress(kind === 'mp4' ? '导出MP4中' : '导出GIF中', true);
+    showAllExportProgress(0, scenesArray.length);
+
+    const targetWidth = state.exportResolution || 1920;
+    const targetHeight = Math.round(targetWidth * 9 / 16);
+    let done = 0, ok = 0, failed = 0;
+
+    try {
+        for (let i = 0; i < scenesArray.length; i++) {
+            if (state.shouldCancelExport) break;
+            try {
+                restoreState(scenesArray[i]);
+                updatePreview();
+                await new Promise(resolve => setTimeout(resolve, 120)); // 等待渲染，同 exportMultipleAsPng
+                if (kind === 'gif') {
+                    await exportGIF(state.currentSceneIndex, `scene_${i + 1}_${targetWidth}x${targetHeight}.gif`, true, false);
+                } else {
+                    await exportMP4(state.currentSceneIndex, `scene_${i + 1}_${targetWidth}x${targetHeight}.${ext}`, true);
+                }
+                ok++;
+            } catch (err) {
+                failed++;
+                console.error(`第 ${i + 1} 个场景${kind.toUpperCase()}导出失败:`, err);
+            }
+            done++;
+            state.exportAllProgress.current = done;
+            showAllExportProgress(done, scenesArray.length);
+            updateExportProgress(Math.round((done / scenesArray.length) * 100), `已完成 ${done}/${scenesArray.length} 个场景`);
+        }
+
+        if (!state.shouldCancelExport) {
+            updateExportProgress(100, '导出完成！'); // 同时重置进度计时
+        }
+    } finally {
+        const cancelled = !!state.shouldCancelExport;
+        // 恢复现场（含取消路径下 exportGIF 提前 return 遗留的打字机覆盖层）
+        try {
+            restoreState({ scenes: originalScenes, currentSceneIndex: originalSceneIndex });
+            if (typeof _exportRestoreOverlay === 'function') _exportRestoreOverlay();
+            try { if (elements.dialogInput) elements.dialogInput.value = originalDialogValue; } catch (e) { /* ignore */ }
+            updatePreview();
+        } catch (e) {
+            console.error('恢复现场失败:', e);
+        }
+        state.isExportAll = false;
+        hideExportProgress();
+
+        if (cancelled) showToast(`导出已取消（成功 ${ok}/${scenesArray.length}）`, 'warn');
+        else if (failed > 0) showToast(`${kind.toUpperCase()}导出完成，${failed} 个场景失败`, 'warn');
+        else showToast(`成功导出 ${ok} 个${kind === 'mp4' ? (ext === 'mp4' ? 'MP4' : 'WebM') : 'GIF'}文件！`, 'success');
+    }
+}
+
+// 修改现有的导出函数以接受特定场景数组（逐幕串行导出，每场景一个文件）
 async function exportMultipleAsGif(scenesArray) {
-    if (!scenesArray || scenesArray.length === 0) {
-        showToast('没有可导出的场景', 'warn');
-        return;
-    }
-
-    const gif = new GIF({
-        workers: 2,
-        quality: state.gifQuality || 1,
-        width: state.exportResolution || 1920,
-        height: Math.round((state.exportResolution || 1920) * 9 / 16),
-        // 本地 vendor worker（与单幕导出同源，离线可用）；此前引用 CDN，离线/断网时 Worker 无法加载
-        workerScript: (typeof getGifWorkerBlobUrl === 'function')
-            ? await getGifWorkerBlobUrl()
-            : 'vendor/gif.worker.js'
-    });
-
-    showExportProgress('导出GIF中', true);
-
-    let frameCount = 0;
-    const totalFrames = scenesArray.reduce((total, scene) => {
-        const sceneData = scene.scenes[scene.currentSceneIndex || 0];
-        return total + getFrameCountForScene(sceneData);
-    }, 0);
-
-    // 存储当前状态以便恢复
-    const currentState = JSON.parse(JSON.stringify(state));
-
-    try {
-        for (let i = 0; i < scenesArray.length; i++) {
-            const sceneSnapshot = scenesArray[i];
-
-            // 临时替换当前状态
-            state = JSON.parse(JSON.stringify(sceneSnapshot));
-
-            // 更新预览以匹配当前场景
-            updatePreview();
-
-            // 为当前场景生成帧
-            const frames = await captureSceneFrames(state.scenes[state.currentSceneIndex || 0]);
-
-            for (const frame of frames) {
-                gif.addFrame(frame.canvas, { delay: frame.delay });
-                frameCount++;
-
-                // 更新进度
-                const progress = (frameCount / totalFrames) * 100;
-                const currentSceneProgress = ((i + 1) / scenesArray.length) * 100;
-                
-                updateExportProgress(progress, `正在导出第 ${i + 1}/${scenesArray.length} 个场景`);
-                updateAllExportProgress(currentSceneProgress, i + 1, scenesArray.length);
-
-                // 检查是否取消
-                if (exportCancelled) {
-                    gif.abort();
-                    hideExportProgress();
-                    exportCancelled = false;
-                    return;
-                }
-            }
-        }
-
-        gif.on('finished', async (blob) => {
-            hideExportProgress();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `战双剧情_${Date.now()}.gif`;
-            link.click();
-            URL.revokeObjectURL(url);
-        });
-
-        gif.render();
-    } catch (error) {
-        console.error('导出GIF时发生错误:', error);
-        hideExportProgress();
-        showToast('导出GIF时发生错误，请重试', 'error');
-    } finally {
-        // 恢复原始状态
-        state = JSON.parse(JSON.stringify(currentState));
-        updatePreview(); // 恢复预览到原来的状态
-    }
+    await exportScenesSeries(scenesArray, 'gif');
 }
 
-// 获取场景的帧数
-function getFrameCountForScene(sceneData) {
-    // 简化的计算方法，实际应根据动画设置更精确地计算
-    return 30; // 假设每个场景30帧
-}
-
-// 捕获场景帧
-async function captureSceneFrames(sceneData) {
-    const frames = [];
-    const canvas = document.createElement('canvas');
-    canvas.width = state.exportResolution || 1920;
-    canvas.height = Math.round((state.exportResolution || 1920) * 9 / 16);
-    const ctx = canvas.getContext('2d');
-
-    // 这里应该根据实际场景和动画逻辑生成多帧
-    // 为了简化，我们只返回一帧
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.visibility = 'hidden';
-    tempContainer.style.width = `${canvas.width}px`;
-    tempContainer.style.height = `${canvas.height}px`;
-    tempContainer.style.overflow = 'hidden';
-    document.body.appendChild(tempContainer);
-
-    try {
-        await renderSceneToContainer(sceneData, tempContainer, canvas.width, canvas.height);
-        const renderedCanvas = await html2canvas(tempContainer, {
-            canvas: canvas,
-            scale: 1,
-            logging: false,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: null
-        });
-
-        frames.push({
-            canvas: renderedCanvas,
-            delay: 500 // 500ms延迟
-        });
-    } finally {
-        document.body.removeChild(tempContainer);
-    }
-
-    return frames;
-}
-
-// 导出选中的场景为MP4
+// 导出选中的场景为MP4（逐幕串行导出，每场景一个文件）
 async function exportMultipleAsMp4(scenesArray) {
+    await exportScenesSeries(scenesArray, 'mp4');
+}
+
+// 整合导出：将全部暂存画面按顺序连续录制为一个 MP4 视频（逐幕复用单幕 exportMP4 的录制逻辑）
+async function exportMergedMp4FromScenes(scenesArray) {
     if (!scenesArray || scenesArray.length === 0) {
         showToast('没有可导出的场景', 'warn');
         return;
     }
 
-    showExportProgress('导出MP4中', true);
+    // 浏览器不支持录制格式时直接提示
+    const support = checkMP4Support();
+    if (!support.supported) {
+        showToast('整合导出MP4失败：' + support.reason + '\n\n请使用最新版Chrome、Edge或Firefox浏览器。', 'error');
+        return;
+    }
 
-    // 存储当前状态以便恢复
-    const currentState = JSON.parse(JSON.stringify(state));
+    // 完整保存现场（restoreState 只还原 scenes/currentSceneIndex，输入框内容需单独还原）
+    const originalScenes = JSON.parse(JSON.stringify(state.scenes));
+    const originalSceneIndex = state.currentSceneIndex;
+    let originalDialogValue = '';
+    try { originalDialogValue = elements.dialogInput.value; } catch (e) { /* ignore */ }
+
+    // 标记批量导出：进度弹窗的取消按钮仅在 isExportAll 时生效
+    state.isExportAll = true;
+    state.shouldCancelExport = false;
+    state.exportAllProgress = { current: 0, total: scenesArray.length, failed: 0 };
+
+    showExportProgress('整合导出MP4中', true);
+    showAllExportProgress(0, scenesArray.length);
+
+    const targetWidth = state.exportResolution || 1920;
+    const targetHeight = Math.round(targetWidth * 9 / 16);
+
+    // 创建共享录制器：所有画面按顺序连续录入同一条流，全程只 start/stop 一次
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    const stream = canvas.captureStream(30);
+    const chunks = [];
+    const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: support.mimeType,
+        videoBitsPerSecond: (state.exportMp4Quality || 5) * 1000000
+    });
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+            chunks.push(e.data);
+        }
+    };
+
+    let done = 0, ok = 0, failed = 0, skipped = 0;
+    let cancelled = false;
+    let recorderError = null;
 
     try {
-        // 创建临时视频元素
-        const video = document.createElement('video');
-        video.autoplay = false;
-        video.muted = true;
-        video.style.position = 'fixed';
-        video.style.left = '0';
-        video.style.top = '0';
-        video.style.width = '1px';
-        video.style.height = '1px';
-        video.style.opacity = '0';
-        document.body.appendChild(video);
-
-        // 创建MediaRecorder
-        const stream = video.captureStream();
-        const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'video/webm;codecs=vp9',
-            videoBitsPerSecond: (state.mp4Quality || 5) * 2000000 // 根据质量调整比特率
-        });
-
-        const chunks = [];
-        mediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) {
-                chunks.push(event.data);
-            }
-        };
-
-        let recordingStartTime = Date.now();
-        mediaRecorder.onstop = async () => {
-            hideExportProgress();
-
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `战双剧情_${Date.now()}.mp4`;
-            link.click();
-            URL.revokeObjectURL(url);
-
-            document.body.removeChild(video);
-        };
-
-        mediaRecorder.start();
+        mediaRecorder.start(100); // 每100ms收集一次数据
 
         for (let i = 0; i < scenesArray.length; i++) {
-            const sceneSnapshot = scenesArray[i];
-
-            // 临时替换当前状态
-            state = JSON.parse(JSON.stringify(sceneSnapshot));
-
-            // 更新预览以匹配当前场景
-            updatePreview();
-
-            // 捕获当前帧并发送到流
-            const canvas = document.createElement('canvas');
-            canvas.width = state.exportResolution || 1920;
-            canvas.height = Math.round((state.exportResolution || 1920) * 9 / 16);
-            const ctx = canvas.getContext('2d');
-
-            // 使用html2canvas捕获当前预览内容
-            const previewContainer = elements.previewContainer || document.querySelector('#preview-container');
-            if (previewContainer) {
-                // 添加亮度增强蒙版（如果是战双新版模式）
-                _addBrightnessOverlay();
-                _shiftCharacterNameForExport();
-                
-                const capturedCanvas = await html2canvas(previewContainer, {
-                    canvas: canvas,
-                    scale: 1,
-                    logging: false,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: null
-                });
-                
-                // 移除亮度增强蒙版
-                _removeBrightnessOverlay();
-                _restoreCharacterNameAfterExport();
-
-                // 将捕获的画面绘制到视频流中
-                const track = stream.getVideoTracks()[0];
-                if (track) {
-                    const imageCapture = new ImageCapture(track);
-                    // 注意：这里简化处理，实际可能需要更复杂的视频编码逻辑
-                }
+            if (state.shouldCancelExport) break;
+            const snap = scenesArray[i];
+            const sc = snap.scenes && snap.scenes[snap.currentSceneIndex || 0];
+            // 与单幕 exportMP4 的判断一致：需要有台词内容（仅指挥官文本的画面与逐幕导出一样会被跳过）
+            const hasContent = sc && sc.dialogs && sc.dialogs.length;
+            if (!hasContent) { skipped++; done++; continue; } // 空画面跳过（与逐幕导出行为一致）
+            try {
+                restoreState(snap);
+                updatePreview();
+                await new Promise(resolve => setTimeout(resolve, 120)); // 等待渲染
+                // 共享模式：本画面的帧序列连续录入共享录制器，不停录、不下载
+                await exportMP4(state.currentSceneIndex, null, true, { mediaRecorder, canvas, ctx, stream, chunks });
+                ok++;
+            } catch (err) {
+                failed++;
+                console.error(`第 ${i + 1} 个画面整合录制失败:`, err);
             }
-
-            // 模拟每帧持续时间（基于场景时长）
-            const sceneData = sceneSnapshot.scenes[sceneSnapshot.currentSceneIndex || 0];
-            const duration = calculateSceneDuration(sceneData);
-            
-            // 更新进度
-            const progress = ((i + 1) / scenesArray.length) * 100;
-            updateExportProgress(progress, `正在导出第 ${i + 1}/${scenesArray.length} 个场景 (${formatDuration(duration)}s)`);
-
-            // 检查是否取消
-            if (exportCancelled) {
-                mediaRecorder.stop();
-                hideExportProgress();
-                exportCancelled = false;
-                return;
-            }
-
-            // 等待一段时间模拟动画播放
-            await sleep(Math.min(duration, 5000)); // 最大等待5秒
+            done++;
+            state.exportAllProgress.current = done;
+            showAllExportProgress(done, scenesArray.length);
+            updateExportProgress(Math.round((done / scenesArray.length) * 100), `正在整合第 ${done}/${scenesArray.length} 个画面`);
         }
+        cancelled = !!state.shouldCancelExport;
 
+        // 结束录制并等待编码收尾（取消时也停止，保留已录制的部分）
+        const stopped = new Promise(resolve => { mediaRecorder.onstop = resolve; });
         mediaRecorder.stop();
-    } catch (error) {
-        console.error('导出MP4时发生错误:', error);
-        hideExportProgress();
-        showToast('导出MP4时发生错误，请重试', 'error');
+        await stopped;
+    } catch (err) {
+        recorderError = err;
+        console.error('整合导出MP4时发生错误:', err);
+        try { if (mediaRecorder.state !== 'inactive') mediaRecorder.stop(); } catch (e) { /* ignore */ }
     } finally {
-        // 恢复原始状态
-        state = JSON.parse(JSON.stringify(currentState));
-        updatePreview(); // 恢复预览到原来的状态
+        // 恢复现场（含取消路径下提前 return 遗留的打字机覆盖层）
+        try {
+            restoreState({ scenes: originalScenes, currentSceneIndex: originalSceneIndex });
+            if (typeof _exportRestoreOverlay === 'function') _exportRestoreOverlay();
+            try { if (elements.dialogInput) elements.dialogInput.value = originalDialogValue; } catch (e) { /* ignore */ }
+            updatePreview();
+        } catch (e) {
+            console.error('恢复现场失败:', e);
+        }
+        stream.getTracks().forEach(track => track.stop());
+        state.isExportAll = false;
+        hideExportProgress();
     }
+
+    if (recorderError) {
+        showToast('整合导出MP4时发生错误，请重试', 'error');
+        return;
+    }
+    if (ok === 0) {
+        showToast('整合导出完成，但没有可录制的画面内容（画面需要包含台词或指挥官文本）', 'warn');
+        return;
+    }
+
+    // 下载整合视频（取消时已录制的部分同样保留）
+    const blob = new Blob(chunks, { type: support.mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const ext = support.mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+    link.download = `整合视频_${targetWidth}x${targetHeight}_${Date.now()}.${ext}`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    if (cancelled) showToast(`整合导出已取消，已录制的 ${done}/${scenesArray.length} 个画面已保留为视频`, 'warn');
+    else showToast(`整合导出完成：${ok}/${scenesArray.length} 个画面已按顺序整合为一个${ext === 'mp4' ? 'MP4' : 'WebM'}视频`, 'success');
 }
 
 // 导出多个场景为PNG格式
